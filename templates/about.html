@@ -1,0 +1,962 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#07140e">
+    <meta name="description" content="Discover FUNAAB ONE, a campus community platform created by Rex from the Software Engineering Department.">
+    <title>About FUNAAB ONE | Your Campus, Connected</title>
+
+    <style>
+        :root {
+            --bg: #07140e;
+            --surface: #0c2016;
+            --surface-light: #102b1d;
+            --green: #65e69a;
+            --green-light: #a7f5bf;
+            --text: #f2faf4;
+            --muted: #a0b8a8;
+            --border: rgba(185, 241, 201, 0.12);
+            --radius: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse at 50% 0%, #17442b 0%, transparent 38%),
+                var(--bg);
+            color: var(--text);
+            font-family: Inter, -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", sans-serif;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        button, a {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:focus-visible, a:focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 4px;
+        }
+
+        .container {
+            width: min(1120px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        /* NAVIGATION */
+
+        .navbar {
+            height: 82px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: -0.4px;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 15px;
+            background: linear-gradient(135deg, var(--green-light), #32bd70);
+            color: #062012;
+            font-weight: 950;
+            box-shadow: 0 8px 28px #65e69a25;
+        }
+
+        .brand small {
+            display: block;
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 27px;
+            color: #c0d4c5;
+            font-size: 13px;
+        }
+
+        .nav-links a {
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--green);
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 12px 18px;
+            border-radius: 13px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.035);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 750;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s,
+                        border-color 0.2s;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            border-color: #65e69a70;
+        }
+
+        .button-primary {
+            background: var(--green);
+            color: #062012;
+            border-color: var(--green);
+        }
+
+        .button-primary:hover {
+            background: var(--green-light);
+        }
+
+        /* HERO */
+
+        .hero {
+            padding: 105px 0 80px;
+            text-align: center;
+            position: relative;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            border: 1px solid #65e69a35;
+            background: #65e69a0d;
+            color: var(--green-light);
+            padding: 8px 14px;
+            border-radius: 100px;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 850;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green);
+        }
+
+        .hero h1 {
+            max-width: 900px;
+            margin: 27px auto 22px;
+            font-size: clamp(43px, 7.5vw, 82px);
+            line-height: 1.03;
+            letter-spacing: -4px;
+            font-weight: 900;
+        }
+
+        .gradient-text {
+            background: linear-gradient(100deg, #d5ffe0, #65e69a 55%, #a0f3bc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero-description {
+            max-width: 690px;
+            margin: 0 auto;
+            color: #b2c8b9;
+            font-size: clamp(15px, 2vw, 18px);
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        /* ABSTRACT BRAND VISUAL */
+
+        .brand-showcase {
+            width: min(790px, 100%);
+            min-height: 280px;
+            margin: 64px auto 0;
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            place-items: center;
+            border: 1px solid #a0f3bc20;
+            border-radius: 30px;
+            background:
+                radial-gradient(ellipse at center, #1b4a2e 0%, transparent 55%),
+                linear-gradient(130deg, #102b1d, #08180f);
+            box-shadow: 0 30px 90px #0003;
+        }
+
+        .orbit {
+            position: absolute;
+            width: 490px;
+            height: 150px;
+            border: 1px solid #80edaa35;
+            border-radius: 50%;
+            transform: rotate(-25deg);
+            animation: orbit 15s linear infinite;
+        }
+
+        .orbit-two {
+            width: 490px;
+            height: 150px;
+            transform: rotate(25deg);
+            animation-direction: reverse;
+        }
+
+        .orbit-three {
+            width: 320px;
+            height: 250px;
+            transform: rotate(65deg);
+        }
+
+        .showcase-logo {
+            position: relative;
+            z-index: 2;
+            width: 100px;
+            height: 100px;
+            display: grid;
+            place-items: center;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #b4f9c7, #3acb79);
+            color: #052012;
+            font-size: 32px;
+            font-weight: 950;
+            box-shadow: 0 0 75px #65e69a35;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .showcase-caption {
+            position: absolute;
+            bottom: 20px;
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: #b5e9c4;
+            font-weight: 800;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-9px); }
+        }
+
+        @keyframes orbit {
+            to { rotate: 360deg; }
+        }
+
+        /* GENERAL SECTIONS */
+
+        .section {
+            padding: 75px 0;
+        }
+
+        .section-heading {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 38px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 850;
+            color: var(--green);
+        }
+
+        .section-heading h2 {
+            font-size: clamp(30px, 4.5vw, 46px);
+            line-height: 1.15;
+            letter-spacing: -1.7px;
+            margin: 12px 0;
+        }
+
+        .section-heading p {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        /* FEATURE CARDS */
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 17px;
+        }
+
+        .feature-card {
+            padding: 28px;
+            min-height: 220px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: linear-gradient(145deg, #10271b, #0a1a11);
+            transition: transform 0.25s, border-color 0.25s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: #65e69a55;
+        }
+
+        .feature-icon {
+            width: 49px;
+            height: 49px;
+            display: grid;
+            place-items: center;
+            border-radius: 16px;
+            background: #65e69a13;
+            color: var(--green-light);
+            font-size: 23px;
+            margin-bottom: 21px;
+        }
+
+        .feature-card h3 {
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* MISSION */
+
+        .mission-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .mission-card {
+            padding: 36px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: linear-gradient(145deg, #10291c, #0a1a11);
+        }
+
+        .mission-card h2 {
+            font-size: clamp(26px, 3.4vw, 37px);
+            line-height: 1.2;
+            letter-spacing: -1px;
+            margin: 12px 0 16px;
+        }
+
+        .mission-card p {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .mission-quote {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background:
+                radial-gradient(ellipse at 100% 0%, #245a37 0%, transparent 60%),
+                #0c2116;
+        }
+
+        .mission-quote blockquote {
+            font-size: clamp(23px, 3.3vw, 32px);
+            font-weight: 750;
+            letter-spacing: -0.8px;
+            line-height: 1.4;
+        }
+
+        .mission-quote blockquote span {
+            color: var(--green);
+        }
+
+        /* CREATOR */
+
+        .creator-section {
+            padding: 75px 0;
+        }
+
+        .creator-card {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 35px;
+            align-items: center;
+            padding: clamp(25px, 5vw, 50px);
+            border: 1px solid #65e69a35;
+            border-radius: 30px;
+            background:
+                radial-gradient(ellipse at 0% 0%, #1c4c2e 0%, transparent 65%),
+                linear-gradient(135deg, #10281b, #09180f);
+            box-shadow: 0 25px 75px #0002;
+        }
+
+        .creator-monogram {
+            width: 175px;
+            height: 175px;
+            border-radius: 38px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #b5f7c7, #34c775);
+            color: #052012;
+            font-size: 65px;
+            font-weight: 950;
+            box-shadow: 0 20px 45px #0003;
+        }
+
+        .creator-label {
+            color: var(--green);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 850;
+        }
+
+        .creator-content h2 {
+            font-size: clamp(35px, 5vw, 53px);
+            line-height: 1.1;
+            letter-spacing: -1.8px;
+            margin: 8px 0 5px;
+        }
+
+        .creator-role {
+            color: #c2e4cc;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 17px;
+        }
+
+        .creator-description {
+            max-width: 650px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .creator-badge {
+            display: inline-flex;
+            margin-top: 20px;
+            padding: 9px 13px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #d7f6e0;
+            background: #ffffff05;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        /* CLOSING CTA */
+
+        .closing {
+            padding: 60px 25px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            background:
+                radial-gradient(ellipse at 50% 0%, #1a4b2d 0%, transparent 65%),
+                #0b1d13;
+            margin-bottom: 75px;
+        }
+
+        .closing h2 {
+            font-size: clamp(29px, 4.5vw, 44px);
+            line-height: 1.2;
+            letter-spacing: -1.5px;
+            margin: 15px 0;
+        }
+
+        .closing p {
+            max-width: 600px;
+            color: var(--muted);
+            margin: 0 auto 25px;
+            font-size: 14px;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 25px 0 32px;
+            color: #829b8a;
+            font-size: 12px;
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .footer-brand {
+            color: #d9eee0;
+            font-weight: 800;
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 800px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 75px 0 55px;
+            }
+
+            .hero h1 {
+                letter-spacing: -2.5px;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .mission-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .creator-card {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+            }
+
+            .creator-monogram {
+                width: 130px;
+                height: 130px;
+                border-radius: 30px;
+                font-size: 48px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .container {
+                width: calc(100% - 28px);
+            }
+
+            .navbar {
+                height: 70px;
+            }
+
+            .brand {
+                font-size: 14px;
+                gap: 9px;
+            }
+
+            .brand-logo {
+                width: 39px;
+                height: 39px;
+                border-radius: 12px;
+            }
+
+            .navbar > .button {
+                padding: 10px 11px;
+                font-size: 11px;
+            }
+
+            .hero {
+                padding: 62px 0 45px;
+            }
+
+            .hero h1 {
+                font-size: clamp(40px, 12vw, 57px);
+                letter-spacing: -2px;
+            }
+
+            .hero-description {
+                font-size: 14px;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .hero-buttons .button {
+                width: 100%;
+            }
+
+            .brand-showcase {
+                min-height: 210px;
+                margin-top: 40px;
+                border-radius: 23px;
+            }
+
+            .orbit {
+                width: 330px;
+                height: 110px;
+            }
+
+            .orbit-three {
+                width: 280px;
+                height: 190px;
+            }
+
+            .showcase-logo {
+                width: 78px;
+                height: 78px;
+                border-radius: 24px;
+                font-size: 25px;
+            }
+
+            .section {
+                padding: 48px 0;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .feature-card {
+                padding: 23px;
+                min-height: 0;
+            }
+
+            .mission-card {
+                padding: 25px;
+            }
+
+            .creator-section {
+                padding: 45px 0;
+            }
+
+            .creator-card {
+                padding: 27px 20px;
+                border-radius: 23px;
+            }
+
+            .closing {
+                padding: 43px 19px;
+                margin-bottom: 50px;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <header class="container navbar">
+        <a href="{{ url_for('home') }}" class="brand">
+            <span class="brand-logo">F1</span>
+            <span>
+                FUNAAB ONE
+                <small>Your Campus. Connected.</small>
+            </span>
+        </a>
+
+        <nav class="nav-links" aria-label="Main navigation">
+            <a href="#story">Our Story</a>
+            <a href="#features">Features</a>
+            <a href="#mission">Our Mission</a>
+            <a href="#creator">Creator</a>
+        </nav>
+
+        <a href="{{ url_for('dashboard') }}" class="button">
+            ← Campus Feed
+        </a>
+    </header>
+
+    <main>
+
+        <!-- HERO SECTION -->
+        <section class="container hero" id="story">
+            <div class="eyebrow">
+                <span class="status-dot"></span>
+                Made for campus life
+            </div>
+
+            <h1>
+                Your campus.<br>
+                <span class="gradient-text">Your people. One platform.</span>
+            </h1>
+
+            <p class="hero-description">
+                Welcome to FUNAAB ONE — a digital campus community designed
+                to bring students closer, make sharing easier, and create
+                more opportunities to connect with the people around you.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="{{ url_for('dashboard') }}"
+                   class="button button-primary">
+                    Explore the Campus Feed ↗
+                </a>
+
+                <a href="#creator" class="button">
+                    Meet the Creator
+                </a>
+            </div>
+
+            <div class="brand-showcase" aria-label="FUNAAB ONE brand illustration">
+                <div class="orbit"></div>
+                <div class="orbit orbit-two"></div>
+                <div class="orbit orbit-three"></div>
+
+                <div class="showcase-logo">F1</div>
+
+                <div class="showcase-caption">
+                    CONNECT · SHARE · GROW
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURES -->
+        <section class="container section" id="features">
+            <div class="section-heading">
+                <div class="section-label">What makes us different</div>
+
+                <h2>
+                    Everything starts with
+                    <span class="gradient-text">connection.</span>
+                </h2>
+
+                <p>
+                    One shared space for campus conversations, student
+                    creativity, and discovering what's happening around you.
+                </p>
+            </div>
+
+            <div class="features-grid">
+
+                <article class="feature-card">
+                    <div class="feature-icon">◉</div>
+                    <h3>Campus Feed</h3>
+                    <p>
+                        Share your thoughts, campus experiences, updates,
+                        photos, and videos with the community.
+                    </p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">♡</div>
+                    <h3>Student Profiles</h3>
+                    <p>
+                        Discover people, explore their posts, follow students,
+                        and build meaningful campus connections.
+                    </p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">↗</div>
+                    <h3>Community Engagement</h3>
+                    <p>
+                        Like, comment on, and repost updates to take part
+                        in conversations that matter to you.
+                    </p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">▧</div>
+                    <h3>Photos & Videos</h3>
+                    <p>
+                        Share moments visually with media designed to keep
+                        its natural proportions and display beautifully.
+                    </p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">◇</div>
+                    <h3>Campus Discovery</h3>
+                    <p>
+                        Explore the platform and discover useful campus
+                        resources and community features as they develop.
+                    </p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">✦</div>
+                    <h3>Built to Grow</h3>
+                    <p>
+                        FUNAAB ONE is an evolving project with room for
+                        new ideas and more student-focused tools.
+                    </p>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- MISSION -->
+        <section class="container section" id="mission">
+            <div class="mission-grid">
+
+                <article class="mission-card">
+                    <div class="section-label">Our mission</div>
+
+                    <h2>
+                        Bringing campus life
+                        <span class="gradient-text">closer together.</span>
+                    </h2>
+
+                    <p>
+                        The goal of FUNAAB ONE is to provide students with
+                        a welcoming digital space where they can connect,
+                        share experiences, discover ideas, and participate
+                        in a more connected campus community.
+                    </p>
+                </article>
+
+                <article class="mission-card mission-quote">
+                    <div class="section-label">What we believe</div>
+
+                    <blockquote>
+                        A campus is more than buildings and lecture halls.
+                        It's the people, ideas, and
+                        <span>memories we create together.</span>
+                    </blockquote>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- CREATOR -->
+        <section class="container creator-section" id="creator">
+            <div class="creator-card">
+
+                <div class="creator-monogram" aria-label="Rex monogram">
+                    R
+                </div>
+
+                <div class="creator-content">
+                    <div class="creator-label">
+                        The person behind the platform
+                    </div>
+
+                    <h2>Meet <span class="gradient-text">Rex.</span></h2>
+
+                    <p class="creator-role">
+                        Creator of FUNAAB ONE
+                        <br>
+                        Software Engineering Department
+                    </p>
+
+                    <p class="creator-description">
+                        FUNAAB ONE was created by Rex, from the Software
+                        Engineering Department, with a vision of using
+                        technology to bring students closer together.
+
+                        <br><br>
+
+                        The idea is simple: software should do more than
+                        work behind a screen. It can help people connect,
+                        exchange ideas, share their experiences, and build
+                        a stronger community.
+
+                        FUNAAB ONE is a step toward that vision — a platform
+                        shaped by curiosity, creativity, and the belief that
+                        great things can grow when people connect.
+                    </p>
+
+                    <div class="creator-badge">
+                        Built with code, purpose, and campus spirit 🌱
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CALL TO ACTION -->
+        <section class="container">
+            <div class="closing">
+                <div class="eyebrow">
+                    <span class="status-dot"></span>
+                    Your community awaits
+                </div>
+
+                <h2>
+                    This is more than a feed.<br>
+                    <span class="gradient-text">It's our campus.</span>
+                </h2>
+
+                <p>
+                    Share your moments, join the conversation, discover
+                    people, and help make FUNAAB ONE a useful space for
+                    the campus community.
+                </p>
+
+                <a href="{{ url_for('dashboard') }}"
+                   class="button button-primary">
+                    Back to FUNAAB ONE →
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div>
+                <span class="footer-brand">FUNAAB ONE</span>
+                <span> · Your Campus. Connected.</span>
+            </div>
+
+            <div>
+                Created by Rex · Software Engineering Department
+            </div>
+
+            <div>
+                © {{ current_year if current_year is defined else 2026 }}
+                FUNAAB ONE
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

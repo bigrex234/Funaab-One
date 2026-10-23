@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071b14">
+  <title>{{ profile_user.full_name or profile_user.username }} · FUNAAB ONE</title>
+  <style>
+    :root {
+      --bg:#07130f; --panel:#0d2119; --panel2:#10291f; --line:rgba(211,244,222,.11);
+      --text:#eef8f0; --muted:#9bb4a4; --green:#69e69b; --green-dark:#163e2b;
+      --danger:#ff8e8e; --radius:22px; color-scheme:dark;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(ellipse at 50% -15%,#19432d 0,transparent 48%),var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}
+    a{color:inherit;text-decoration:none}
+    button{font:inherit}
+    .shell{width:min(1040px,100% - 32px);margin:auto;padding:22px 0 64px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:-.4px}
+    .brand-mark{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#8af0ac,#36b86d);color:#062013;font-weight:950;box-shadow:0 8px 24px #38b66a26}
+    .brand small{display:block;color:var(--muted);font-size:11px;font-weight:500;letter-spacing:.2px}
+    .top-actions{display:flex;gap:9px;align-items:center}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:13px;padding:10px 15px;background:#ffffff08;color:var(--text);font-weight:700;cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
+    .btn:hover{transform:translateY(-1px);border-color:#69e69b66;background:#69e69b12}
+    .btn.primary{background:var(--green);border-color:var(--green);color:#062013}
+    .btn.primary:hover{background:#8af0ac}
+    .btn:focus-visible,a:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+    .profile-card{overflow:hidden;border:1px solid var(--line);border-radius:28px;background:linear-gradient(145deg,#10291f,#0b1b14 68%);box-shadow:0 24px 70px #0003}
+    .cover{height:190px;position:relative;overflow:hidden;background:linear-gradient(115deg,#1e633b,#0d3525 55%,#10271d)}
+    .cover:before,.cover:after{content:"";position:absolute;border:1px solid #b8ffd029;border-radius:50%;width:360px;height:360px;right:-60px;top:-230px}
+    .cover:after{width:270px;height:270px;right:90px;top:-160px}
+    .cover-label{position:absolute;bottom:18px;left:24px;color:#d8ffe4;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
+    .profile-main{padding:0 28px 27px}
+    .identity-row{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-top:-48px;position:relative}
+    .avatar{width:112px;height:112px;flex:none;border:5px solid #0d2119;border-radius:31px;background:linear-gradient(135deg,#234c35,#142a20);display:grid;place-items:center;color:#baf5cb;font-size:36px;font-weight:850;overflow:hidden;box-shadow:0 12px 30px #0004}
+    .avatar img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+    .profile-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;padding-bottom:5px}
+    .identity{padding-top:15px}
+    .name-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    h1{font-size:clamp(25px,4vw,34px);line-height:1.15;letter-spacing:-1.1px;margin:0;font-weight:850}
+    .verified{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--green);color:#062013;font-size:12px;font-weight:950}
+    .handle{color:var(--muted);margin-top:5px;font-size:14px}
+    .bio{max-width:660px;color:#d2e4d7;margin:16px 0 0;white-space:pre-line;overflow-wrap:anywhere}
+    .details{display:flex;gap:10px 18px;flex-wrap:wrap;margin-top:14px;color:var(--muted);font-size:13px}
+    .detail{display:inline-flex;align-items:center;gap:7px}
+    .stats{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+    .stat{display:flex;align-items:baseline;gap:6px}
+    .stat strong{font-size:18px;color:var(--text)}
+    .stat span{font-size:13px;color:var(--muted)}
+    .stat:hover span{color:var(--green)}
+    .content-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:28px 2px 14px}
+    .content-head h2{font-size:19px;letter-spacing:-.4px;margin:0}
+    .content-head p{font-size:12px;color:var(--muted);margin:3px 0 0}
+    .post-list{display:grid;gap:14px}
+    .post{border:1px solid var(--line);background:linear-gradient(140deg,#0e241a,#0a1912);border-radius:20px;padding:21px;min-width:0}
+    .post-top{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+    .mini-avatar{width:42px;height:42px;border-radius:14px;background:var(--green-dark);display:grid;place-items:center;color:#baf5cb;font-weight:800;overflow:hidden;flex:none}
+    .mini-avatar img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+    .post-author{font-weight:750;font-size:14px}
+    .post-time{font-size:12px;color:var(--muted);margin-top:2px}
+    .post-body{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;color:#e6f2e9}
+    .media{margin-top:15px;overflow:hidden;border-radius:15px;background:#050b08;border:1px solid var(--line);display:flex;justify-content:center;align-items:center}
+    .media img,.media video{display:block;width:100%;height:auto;max-height:650px;object-fit:contain}
+    .post-meta{display:flex;gap:15px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:16px;padding-top:12px;color:var(--muted);font-size:12px}
+    .empty{padding:48px 22px;text-align:center;border:1px dashed #8fbda04a;border-radius:22px;background:#0b1b14}
+    .empty-icon{width:54px;height:54px;margin:0 auto 13px;border-radius:18px;background:#69e69b14;display:grid;place-items:center;font-size:24px}
+    .empty h3{margin:0 0 6px;font-size:17px}
+    .empty p{color:var(--muted);margin:0 0 17px;font-size:14px}
+    .flash-list{display:grid;gap:8px;margin-bottom:14px}
+    .flash{border:1px solid var(--line);background:#10291f;padding:11px 14px;border-radius:12px;color:#d9f7e2;font-size:13px}
+    .flash.error{border-color:#ff8e8e55;color:#ffc1c1}
+    .flash.success{border-color:#69e69b55}
+    .footer{text-align:center;color:#6f8b79;font-size:11px;margin-top:28px}
+    @media(max-width:600px){
+      .shell{width:min(100% - 20px,1040px);padding-top:13px}
+      .topbar{margin-bottom:14px}
+      .brand-mark{width:38px;height:38px;border-radius:12px}
+      .top-actions .btn{padding:9px 11px;font-size:12px}
+      .cover{height:145px}
+      .profile-main{padding:0 16px 20px}
+      .identity-row{align-items:flex-end;gap:8px;margin-top:-42px}
+      .avatar{width:88px;height:88px;border-radius:25px;border-width:4px;font-size:29px}
+      .profile-actions{gap:6px}
+      .profile-actions .btn{padding:9px 10px;font-size:12px}
+      .identity{padding-top:12px}
+      .handle{font-size:13px}
+      .bio{font-size:14px}
+      .stats{gap:16px;margin-top:18px;padding-top:16px}
+      .stat{gap:4px;flex-direction:column}
+      .stat strong{font-size:17px}
+      .stat span{font-size:11px}
+      .post{padding:16px}
+      .content-head{margin-top:23px}
+    }
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+    .safety-menu{position:relative}.safety-menu summary{list-style:none}.safety-menu summary::-webkit-details-marker{display:none}.safety-actions{position:absolute;z-index:10;right:0;top:calc(100% + 8px);width:min(300px,85vw);padding:14px;background:#0d2119;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 38px #0006;display:grid;gap:14px}.safety-actions form{display:grid;gap:8px}.safety-actions select,.safety-actions textarea{width:100%;background:#07130f;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px;font:inherit}.safety-actions textarea{min-height:75px;resize:vertical}.btn.danger{color:var(--danger)}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard') }}" aria-label="FUNAAB ONE campus feed">
+        <span class="brand-mark">F1</span>
+        <span>FUNAAB ONE<small>Your campus. Your people.</small></span>
+      </a>
+      <div class="top-actions">
+        <a class="btn" href="{{ url_for('dashboard') }}">← <span>Campus feed</span></a>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="flash {{ category|e }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main>
+      <section class="profile-card" aria-labelledby="profile-name">
+        <div class="cover"><span class="cover-label">FUNAAB ONE · COMMUNITY</span></div>
+        <div class="profile-main">
+          <div class="identity-row">
+            <div class="avatar" aria-label="Profile avatar">
+              {% if profile_user.avatar_url is defined and profile_user.avatar_url %}
+                <img src="{{ profile_user.avatar_url }}" alt="{{ profile_user.full_name or profile_user.username }}'s profile photo">
+              {% elif profile_user.profile_picture is defined and profile_user.profile_picture %}
+                <img src="{{ profile_user.profile_picture }}" alt="{{ profile_user.full_name or profile_user.username }}'s profile photo">
+              {% else %}
+                {{ (profile_user.full_name or profile_user.username or 'U')[:1]|upper }}
+              {% endif %}
+            </div>
+            <div class="profile-actions">
+              {% if profile_user.id == student.id %}
+                <a class="btn primary" href="{{ url_for('dashboard') }}">＋ Create a post</a>
+              {% else %}
+                <form method="post" action="{{ url_for('start_direct_message', username=profile_user.username) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn" type="submit">✉ Message</button>
+                </form>
+                <form method="post" action="{{ url_for('toggle_follow', username=profile_user.username) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if is_following %}
+                    <button class="btn" type="submit">✓ Following</button>
+                  {% else %}
+                    <button class="btn primary" type="submit">＋ Follow</button>
+                  {% endif %}
+                </form>
+                <details class="safety-menu">
+                  <summary class="btn">Safety</summary>
+                  <div class="safety-actions">
+                    <form method="post" action="{{ url_for('block_user', username=profile_user.username) }}" onsubmit="return confirm('Block this student? Their posts and profile will be hidden, and interactions between you will be restricted.');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+                      <button class="btn danger" type="submit">Block student</button>
+                    </form>
+                    <form method="post" action="{{ url_for('report_user', username=profile_user.username) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <label for="user-report-reason" class="muted">Report this account</label>
+                      <select id="user-report-reason" name="reason" required>
+                        <option value="">Choose a reason</option>
+                        {% for key, label in report_reasons.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+                      </select>
+                      <textarea name="details" maxlength="500" placeholder="Optional details (max 500 characters)"></textarea>
+                      <button class="btn danger" type="submit">Submit report</button>
+                    </form>
+                  </div>
+                </details>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="identity">
+            <div class="name-line">
+              <h1 id="profile-name">{{ profile_user.full_name or profile_user.username }}</h1>
+              {% if profile_user.is_admin %}<span class="verified" title="FUNAAB ONE admin" aria-label="FUNAAB ONE admin">✓</span>{% endif %}
+            </div>
+            <div class="handle">@{{ profile_user.username }}</div>
+
+            {% if profile_user.bio is defined and profile_user.bio %}
+              <p class="bio">{{ profile_user.bio }}</p>
+            {% else %}
+              <p class="bio">Part of the FUNAAB ONE community 🌱</p>
+            {% endif %}
+
+            <div class="details">
+              {% if profile_user.department is defined and profile_user.department %}
+                <span class="detail">⌂ {{ profile_user.department }}</span>
+              {% endif %}
+              {% if profile_user.level is defined and profile_user.level %}
+                <span class="detail">▦ {{ profile_user.level }} level</span>
+              {% endif %}
+              {% if profile_user.created_at is defined and profile_user.created_at %}
+                <span class="detail">◷ Joined {{ profile_user.created_at.strftime('%b %Y') }}</span>
+              {% endif %}
+            </div>
+
+            <div class="stats" aria-label="Profile statistics">
+              <div class="stat"><strong>{{ posts_count }}</strong><span>Posts</span></div>
+              <div class="stat"><strong>{{ followers_count }}</strong><span>Followers</span></div>
+              <div class="stat"><strong>{{ following_count }}</strong><span>Following</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="posts-title">
+        <div class="content-head">
+          <div><h2 id="posts-title">Posts</h2><p>What {{ 'you have' if profile_user.id == student.id else profile_user.username ~ ' has' }} shared with campus</p></div>
+          <span class="btn" aria-label="Number of posts">{{ posts_count }} total</span>
+        </div>
+
+        {% if posts %}
+          <div class="post-list">
+            {% for post in posts %}
+              <article class="post">
+                <div class="post-top">
+                  <div class="mini-avatar">
+                    {% if profile_user.avatar_url is defined and profile_user.avatar_url %}
+                      <img src="{{ profile_user.avatar_url }}" alt="">
+                    {% elif profile_user.profile_picture is defined and profile_user.profile_picture %}
+                      <img src="{{ profile_user.profile_picture }}" alt="">
+                    {% else %}
+                      {{ (profile_user.full_name or profile_user.username or 'U')[:1]|upper }}
+                    {% endif %}
+                  </div>
+                  <div>
+                    <div class="post-author">{{ profile_user.full_name or profile_user.username }}</div>
+                    <div class="post-time">
+                      {% if post.created_at %}{{ post.created_at.strftime('%b %d, %Y · %I:%M %p') }}{% else %}Shared on FUNAAB ONE{% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% if profile_user.id != student.id %}
+                  <details style="margin:8px 0">
+                    <summary class="btn" style="padding:6px 10px;font-size:12px">Report post</summary>
+                    <form method="post" action="{{ url_for('report_post', post_id=post.id) }}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="next" value="{{ url_for('profile', username=profile_user.username) }}">
+                      <select name="reason" required aria-label="Reason for report" style="background:#07130f;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:8px">
+                        <option value="">Choose a reason</option>
+                        {% for key, label in report_reasons.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+                      </select>
+                      <button class="btn danger" type="submit">Send report</button>
+                    </form>
+                  </details>
+                {% endif %}
+
+                {% if post.body %}
+                  <p class="post-body">{{ post.body }}</p>
+                {% endif %}
+
+                {% if post.media_url %}
+                  <div class="media">
+                    {% if post.media_type == 'video' %}
+                      <video controls playsinline preload="none" {% if post.thumbnail_url is defined and post.thumbnail_url %}poster="{{ post.thumbnail_url }}"{% endif %}>
+                        <source src="{{ post.media_url }}">
+                        Your browser does not support embedded video.
+                      </video>
+                    {% else %}
+                      <img src="{{ post.media_url }}" alt="Photo shared by {{ profile_user.full_name or profile_user.username }}" loading="lazy">
+                    {% endif %}
+                  </div>
+                {% endif %}
+
+                <div class="post-meta">
+                  <span>♡ {{ post.likes|length if post.likes is defined else 0 }} likes</span>
+                  <span>▤ {{ post.comments|length if post.comments is defined else 0 }} comments</span>
+                  <span>↗ {{ post.reposts|length if post.reposts is defined else 0 }} reposts</span>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty">
+            <div class="empty-icon">✦</div>
+            <h3>No posts yet</h3>
+            <p>{% if profile_user.id == student.id %}Share your first update with the FUNAAB ONE community.{% else %}When this person shares something, it will appear here.{% endif %}</p>
+            {% if profile_user.id == student.id %}
+              <a class="btn primary" href="{{ url_for('dashboard') }}">Go to campus feed</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </section>
+    </main>
+    <footer class="footer">FUNAAB ONE · Growing together, one connection at a time.</footer>
+  </div>
+</body>
+</html>

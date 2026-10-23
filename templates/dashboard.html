@@ -1,0 +1,1162 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07110F">
+    <title>Campus Feed | FUNAAB ONE</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        try {
+            const savedTheme = localStorage.getItem("funaab-one-theme");
+            if (savedTheme === "light" || savedTheme === "dark") {
+                document.documentElement.dataset.theme = savedTheme;
+            }
+        } catch (e) {}
+    </script>
+
+    <style>
+        :root {
+            --bg: #07110F;
+            --surface: #0D1D17;
+            --surface2: #14291F;
+            --text: #EDF7F1;
+            --muted: #9AB0A3;
+            --green: #2EE59D;
+            --on-green: #04150D;
+            --border: rgba(255,255,255,.10);
+            --danger: #FF8795;
+            --shadow: 0 12px 35px rgba(0,0,0,.12);
+        }
+
+        [data-theme="light"] {
+            --bg: #F4F8F5;
+            --surface: #FFFFFF;
+            --surface2: #E7F2EA;
+            --text: #102B1E;
+            --muted: #587064;
+            --green: #087D50;
+            --on-green: #FFFFFF;
+            --border: rgba(10,50,30,.14);
+            --danger: #BC2540;
+            --shadow: 0 12px 35px rgba(10,50,30,.06);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "DM Sans", sans-serif;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        button, input, textarea, select { font: inherit; }
+
+        button { cursor: pointer; }
+
+        h1, h2, h3, .brand {
+            font-family: "Space Grotesk", sans-serif;
+        }
+
+        [hidden] { display: none !important; }
+
+        /* Sidebar */
+
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 30;
+            width: 245px;
+            padding: 20px 14px;
+            overflow-y: auto;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            transition: transform .2s ease;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 8px 22px;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .logo {
+            width: 39px;
+            height: 39px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: var(--green);
+            color: var(--on-green);
+            font-weight: 700;
+        }
+
+        .nav-label {
+            margin: 17px 10px 8px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .nav a, .nav .soon {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 12px;
+            margin-bottom: 3px;
+            border-radius: 10px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .nav a:hover, .nav a.active {
+            background: var(--surface2);
+            color: var(--green);
+        }
+
+        .nav .soon { opacity: .65; }
+
+        .pill {
+            margin-left: auto;
+            padding: 3px 7px;
+            border-radius: 20px;
+            background: var(--surface2);
+            color: var(--muted);
+            font-size: 9px;
+        }
+
+        .sidebar-footer {
+            margin: 25px 5px 5px;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        /* Main layout */
+
+        .main { margin-left: 245px; }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 12px 28px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar h1 { margin: 0; font-size: 18px; }
+
+        .top-subtitle {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            min-height: 39px;
+            padding: 0 13px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface2);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .btn:hover { border-color: var(--green); }
+
+        .btn-primary {
+            background: var(--green);
+            border-color: var(--green);
+            color: var(--on-green);
+        }
+
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .menu-btn { display: none; }
+
+        .content {
+            max-width: 1250px;
+            margin: 0 auto;
+            padding: 24px 28px 45px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 285px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .card {
+            min-width: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-pad { padding: 18px; }
+
+        .card h3 { margin: 0 0 8px; font-size: 14px; }
+
+        .muted {
+            margin: 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .flash {
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--green);
+            font-size: 13px;
+        }
+
+        .flash.error { color: var(--danger); }
+
+        /* Profile avatars */
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: var(--surface2);
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        /* Uploaded profile photos fill the same avatar shape; users without
+           a photo keep the existing first-letter fallback. */
+        .avatar img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+        }
+
+        /* Composer */
+
+        .composer {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .composer form { flex: 1; min-width: 0; }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            outline: none;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        textarea {
+            min-height: 95px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        textarea:focus, input:focus { border-color: var(--green); }
+
+        .composer-foot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .counter { color: var(--muted); font-size: 11px; }
+        .counter.over { color: var(--danger); }
+
+        /* Feed */
+
+        .feed-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin: 23px 2px 11px;
+        }
+
+        .feed-title h2 { margin: 0; font-size: 16px; }
+
+        .feed-label {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .post {
+            display: flex;
+            gap: 12px;
+            padding: 17px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .post:last-child { border-bottom: 0; }
+
+        .post-body { flex: 1; min-width: 0; }
+
+        .post-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px 8px;
+        }
+
+        .post-name { font-size: 13px; font-weight: 700; }
+
+        .post-meta {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .post-actions {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-left: auto;
+        }
+
+        .text-btn {
+            padding: 4px 0;
+            border: 0;
+            background: transparent;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .text-btn:hover { color: var(--green); }
+        .text-btn.danger:hover { color: var(--danger); }
+
+        .post-text {
+            margin: 9px 0 12px;
+            font-size: 14px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        /* Media always keeps its natural aspect ratio; never crop or stretch. */
+        .post-media {
+            width: 100%;
+            margin: 10px 0 12px;
+            overflow: hidden;
+            border-radius: 12px;
+            background: #101510;
+            text-align: center;
+        }
+
+        .post-media img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 75vh;
+            object-fit: contain;
+            margin: 0 auto;
+        }
+
+        .post-media video {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 75vh;
+            object-fit: contain;
+            background: #101510;
+            margin: 0 auto;
+        }
+
+        .post-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 12px 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .post-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            padding-top: 11px;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-form { display: inline-flex; }
+
+        .action-btn {
+            min-height: 35px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 0 10px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .action-btn:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .action-btn.liked {
+            background: rgba(46,229,157,.10);
+            color: var(--green);
+        }
+
+        .action-btn.reposted { color: var(--green); }
+
+        /* Comments */
+
+        .comments {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            background: var(--bg);
+        }
+
+        .comments-title {
+            margin: 0 0 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .comment {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .comment-avatar {
+            width: 29px;
+            height: 29px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            background: var(--surface2);
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .comment-avatar { overflow: hidden; text-decoration: none; }
+        .comment-avatar img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: inherit;
+        }
+
+        .comment-content { min-width: 0; flex: 1; }
+
+        .comment-meta {
+            margin-bottom: 3px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .comment-meta span {
+            margin-left: 5px;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .comment-text {
+            font-size: 12px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 7px;
+            margin-top: 10px;
+        }
+
+        .comment-form input {
+            min-width: 0;
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--surface);
+            color: var(--text);
+            font-size: 12px;
+        }
+
+        .comment-form button { flex: 0 0 auto; }
+
+        /* Report dropdown */
+
+        .report summary {
+            list-style: none;
+            cursor: pointer;
+        }
+
+        .report summary::-webkit-details-marker { display: none; }
+
+        .report-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 8px;
+        }
+
+        .report-form select {
+            max-width: 160px;
+            min-height: 34px;
+            padding: 0 8px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 11px;
+        }
+
+        /* Sidebar cards */
+
+        .profile-row {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .profile-name { font-size: 13px; font-weight: 700; }
+        .profile-handle { margin-top: 3px; color: var(--muted); font-size: 11px; }
+
+        .detail { margin-top: 15px; font-size: 12px; overflow-wrap: anywhere; }
+
+        .detail small {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .chip {
+            padding: 6px 9px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .side-stack { display: grid; gap: 14px; }
+
+        .empty {
+            padding: 35px 18px;
+            color: var(--muted);
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 25;
+            background: rgba(0,0,0,.55);
+        }
+
+        .overlay.show { display: block; }
+
+        @media (max-width: 1050px) {
+            .layout { grid-template-columns: minmax(0,1fr) 245px; gap: 14px; }
+            .content { padding: 20px 18px 35px; }
+            .topbar { padding: 12px 18px; }
+        }
+
+        @media (max-width: 850px) {
+            .layout { grid-template-columns: 1fr; }
+            .side-stack { grid-template-columns: repeat(2,minmax(0,1fr)); }
+        }
+
+        @media (max-width: 650px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main { margin-left: 0; }
+            .menu-btn { display: inline-block; }
+            .topbar { min-height: 64px; padding: 10px 12px; }
+            .topbar h1 { font-size: 16px; }
+            .top-subtitle { display: none; }
+            .content { padding: 15px 10px 28px; }
+            .composer { gap: 9px; padding: 12px; }
+            .post { gap: 9px; padding: 13px 11px; }
+            .post-actions { gap: 7px; }
+            .post-head { gap: 5px; }
+            .post-buttons { gap: 2px; }
+            .action-btn { padding: 0 7px; font-size: 10px; }
+            .side-stack { grid-template-columns: 1fr; }
+            .avatar { width: 36px; height: 36px; border-radius: 11px; }
+            .comments { padding: 10px; }
+        }
+            .nav-unread-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 20px; height: 20px; margin-left: auto; padding: 0 6px;
+            border-radius: 999px; background: #2bc083; color: #052016;
+            font-size: 11px; font-weight: 800; line-height: 1;
+        }
+        .nav a.messages-nav { display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+
+<body>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+    <a href="{{ url_for('home') }}" class="brand">
+        <span class="logo">F1</span>
+        FUNAAB ONE
+    </a>
+
+    <div class="nav-label">Campus</div>
+    <nav class="nav">
+        <a class="active" href="{{ url_for('dashboard') }}">◉ Campus Feed</a>
+        <a href="{{ url_for('profile', username=student.username) }}">◎ My Profile</a>
+        <a href="{{ url_for('bookmarks_page') }}">▣ Saved Posts</a>
+        <a href="{{ url_for('edit_profile') }}">✎ Edit Profile</a>
+        <a href="{{ url_for('find_students') }}">⌕ Find Students</a>
+        <a href="{{ url_for('blocked_users') }}">⊘ Blocked Students</a>
+        <a href="{{ url_for('market_place') }}">◇ Marketplace</a>
+        <div class="soon">▤ Academics <span class="pill">Soon</span></div>
+        <a href="{{ url_for('communities') }}">♧ Communities</a>
+        <a class="messages-nav" href="{{ url_for('messages_inbox') }}">▱ Messages{% if unread_message_count %}<span class="nav-unread-badge" aria-label="{{ unread_message_count }} unread messages">{{ unread_message_count if unread_message_count < 100 else '99+' }}</span>{% endif %}</a>
+        <a class="messages-nav" href="{{ url_for('notifications_center') }}">♢ Notifications{% if unread_notification_count %}<span class="nav-unread-badge" aria-label="{{ unread_notification_count }} unread notifications">{{ unread_notification_count if unread_notification_count < 100 else '99+' }}</span>{% endif %}</a>
+        <div class="soon">⌖ Campus Map <span class="pill">Soon</span></div>
+        <div class="soon">✦ AI Assistant <span class="pill">Soon</span></div>
+    </nav>
+
+    <div class="nav-label">More</div>
+    <nav class="nav">
+        <a href="{{ url_for('about') }}">ⓘ About FUNAAB ONE</a>
+        {% if student.is_admin %}
+            <a href="{{ url_for('admin_dashboard') }}">▦ Admin dashboard</a>
+            <a href="{{ url_for('admin_reports') }}">⚑ Reported posts</a>
+            <a href="{{ url_for('admin_safety_reports') }}">🛡 Safety reports</a>
+        {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+        <strong>🌱 Growing together</strong><br>
+        Your campus, your people, one platform.
+    </div>
+</aside>
+
+<main class="main">
+    <header class="topbar">
+        <div class="actions">
+            <button class="btn menu-btn" id="menuBtn" type="button"
+                    aria-label="Open navigation">☰</button>
+            <div>
+                <h1>Campus Feed</h1>
+                <div class="top-subtitle">What's happening around FUNAAB?</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn" id="themeBtn" type="button"
+                    aria-label="Toggle theme">☼ Theme</button>
+
+            <form method="POST" action="{{ url_for('logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn" type="submit">Log out</button>
+            </form>
+        </div>
+    </header>
+
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ 'error' if category == 'error' else '' }}"
+                     role="status">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="layout">
+            <section>
+                <!-- Create post -->
+                <div class="card composer">
+                    <a class="avatar" href="{{ url_for('profile', username=student.username) }}"
+                       aria-label="View your profile">
+                        {% if student.profile_picture %}
+                            <img src="{{ student.profile_picture }}" alt="">
+                        {% else %}
+                            {{ (student.full_name or student.username)[:1] | upper }}
+                        {% endif %}
+                    </a>
+
+                    <form method="POST" action="{{ url_for('create_post') }}"
+                          id="postForm" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token"
+                               value="{{ csrf_token() }}">
+
+                        <textarea id="postBody" name="body" maxlength="280"
+                                  placeholder="What's happening on campus, {{ student.full_name.split()[0] }}?"
+                                  required></textarea>
+
+                        <div class="composer-foot">
+                            <div class="composer-media-tools">
+                                <input type="file" id="mediaInput" name="media" hidden
+                                       accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-m4v,video/x-matroska">
+                                <button type="button" class="btn" id="attachBtn">+ Photo / video</button>
+                                <span class="counter" id="mediaName"></span>
+                                <button type="button" class="text-btn" id="removeMediaBtn" hidden>Remove</button>
+                                <span class="counter" id="counter">0 / 280</span>
+                            </div>
+                            <button class="btn btn-primary" id="postBtn"
+                                    type="submit" disabled>Post</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="feed-title">
+                    <h2>Latest from campus</h2>
+                    <span class="feed-label">Community updates</span>
+                </div>
+
+                <div class="card">
+                    {% for post in posts %}
+                        <article class="post" id="post-{{ post.id }}">
+                            <a class="avatar" href="{{ url_for('profile', username=post.author.username) }}"
+                               aria-label="View {{ post.author.full_name }}'s profile">
+                                {% if post.author.profile_picture %}
+                                    <img src="{{ post.author.profile_picture }}" alt="">
+                                {% else %}
+                                    {{ (post.author.full_name or post.author.username)[:1] | upper }}
+                                {% endif %}
+                            </a>
+
+                            <div class="post-body">
+                                <div class="post-head">
+                                    <a class="post-name" href="{{ url_for('profile', username=post.author.username) }}">
+                                        {{ post.author.full_name }}
+                                    </a>
+                                    <span class="post-meta">
+                                        <a href="{{ url_for('profile', username=post.author.username) }}">@{{ post.author.username }}</a>
+                                        · {{ post.author.level }}L
+                                        · {{ post.created_at | timeago }}
+                                    </span>
+
+                                    <div class="post-actions">
+                                        {% if post.user_id != student.id %}
+                                            <details class="report">
+                                                <summary class="text-btn danger">Report</summary>
+                                                <form class="report-form" method="POST"
+                                                      action="{{ url_for('report_post', post_id=post.id) }}">
+                                                    <input type="hidden" name="csrf_token"
+                                                           value="{{ csrf_token() }}">
+                                                    <select name="reason" required
+                                                            aria-label="Reason for report">
+                                                        <option value="">Reason...</option>
+                                                        {% for key, label in report_reasons.items() %}
+                                                            <option value="{{ key }}">{{ label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <button class="btn" type="submit">Send</button>
+                                                </form>
+                                            </details>
+                                        {% endif %}
+
+                                        {% if post.user_id == student.id %}
+                                            <a class="text-btn" href="{{ url_for('edit_post', post_id=post.id, next=request.full_path) }}">Edit</a>
+                                        {% endif %}
+
+                                        {% if post.user_id == student.id or student.is_admin %}
+                                            <form method="POST"
+                                                  action="{{ url_for('delete_post', post_id=post.id) }}"
+                                                  onsubmit="return confirm('Delete this post permanently?');">
+                                                <input type="hidden" name="csrf_token"
+                                                       value="{{ csrf_token() }}">
+                                                <button class="text-btn danger" type="submit">Delete</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {% if post.body %}
+                                    <p class="post-text">{{ post.body }}</p>
+                                {% endif %}
+
+                                {% if post.media_url and (post.media_url.startswith('/static/uploads/') or post.media_url.startswith('https://res.cloudinary.com/')) %}
+                                    <div class="post-media">
+                                        {% if post.media_type == 'video' %}
+                                            {% set poster_url = post.media_url[:-4] ~ '.jpg' if post.media_url.endswith('.mp4') else '' %}
+                                            <video controls playsinline preload="none"
+                                                   {% if poster_url %}poster="{{ poster_url }}"{% endif %}>
+                                                <source src="{{ post.media_url }}" type="video/mp4">
+                                                Your browser does not support this video.
+                                            </video>
+                                        {% elif post.media_type == 'image' %}
+                                            <img src="{{ post.media_url }}"
+                                                 alt="Photo shared by {{ post.author.full_name }}" loading="lazy">
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="post-stats">
+                                    <span>{{ post.likes|length }} likes</span>
+                                    <span>{{ post.comments|length }} comments</span>
+                                    <span>{{ post.reposts|length }} reposts</span>
+                                </div>
+
+                                <div class="post-buttons">
+                                    <form class="action-form" method="POST"
+                                          action="{{ url_for('toggle_like', post_id=post.id) }}">
+                                        <input type="hidden" name="csrf_token"
+                                               value="{{ csrf_token() }}">
+                                        <button class="action-btn {{ 'liked' if post.id in liked_post_ids else '' }}"
+                                                type="submit">
+                                            {{ '♥ Liked' if post.id in liked_post_ids else '♡ Like' }}
+                                        </button>
+                                    </form>
+
+                                    <button class="action-btn comment-toggle"
+                                            type="button"
+                                            data-target="comments-{{ post.id }}">
+                                        ▢ Comment
+                                    </button>
+
+                                    <form class="action-form" method="POST"
+                                          action="{{ url_for('repost_post', post_id=post.id) }}">
+                                        <input type="hidden" name="csrf_token"
+                                               value="{{ csrf_token() }}">
+                                        <button class="action-btn {{ 'reposted' if post.id in reposted_post_ids else '' }}"
+                                                type="submit"
+                                                {% if post.id in reposted_post_ids %}disabled{% endif %}>
+                                            ↻ {{ 'Reposted' if post.id in reposted_post_ids else 'Repost' }}
+                                        </button>
+                                    </form>
+
+                                    <form class="action-form" method="POST"
+                                          action="{{ url_for('toggle_bookmark', post_id=post.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="next" value="{{ request.full_path }}">
+                                        <button class="action-btn {{ 'reposted' if post.id in bookmarked_post_ids else '' }}" type="submit">
+                                            {{ '▣ Saved' if post.id in bookmarked_post_ids else '▢ Save' }}
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Comments -->
+                                <div class="comments" id="comments-{{ post.id }}">
+                                    <p class="comments-title">
+                                        Comments ({{ post.comments|length }})
+                                    </p>
+
+                                    {% for comment in post.comments[-2:] %}
+                                        <div class="comment">
+                                            <a class="comment-avatar" href="{{ url_for('profile', username=comment.author.username) }}"
+                                               aria-label="View {{ comment.author.full_name }}'s profile">
+                                                {% if comment.author.profile_picture %}
+                                                    <img src="{{ comment.author.profile_picture }}" alt="">
+                                                {% else %}
+                                                    {{ (comment.author.full_name or comment.author.username)[:1] | upper }}
+                                                {% endif %}
+                                            </a>
+                                            <div class="comment-content">
+                                                <div class="comment-meta">
+                                                    {{ comment.author.full_name }}
+                                                    <span>{{ comment.created_at | timeago }}</span>
+                                                </div>
+                                                <div class="comment-text">{{ comment.body }}</div>
+                                                {% if comment.user_id != student.id %}
+                                                    <details class="report">
+                                                        <summary class="text-btn danger">Report comment</summary>
+                                                        <form class="report-form" method="POST" action="{{ url_for('report_comment', comment_id=comment.id) }}">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <select name="reason" required aria-label="Reason for comment report">
+                                                                <option value="">Reason...</option>
+                                                                {% for key, label in report_reasons.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+                                                            </select>
+                                                            <button class="btn" type="submit">Send</button>
+                                                        </form>
+                                                    </details>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="muted" style="margin-bottom:10px;">
+                                            No comments yet. Start the conversation.
+                                        </p>
+                                    {% endfor %}
+
+                                    {% if post.comments|length > 2 %}
+                                        <details class="more-comments">
+                                            <summary>View all {{ post.comments|length }} comments</summary>
+                                            {% for comment in post.comments[:-2] %}
+                                                <div class="comment">
+                                                    <a class="comment-avatar" href="{{ url_for('profile', username=comment.author.username) }}"
+                                                   aria-label="View {{ comment.author.full_name }}'s profile">
+                                                    {% if comment.author.profile_picture %}<img src="{{ comment.author.profile_picture }}" alt="">{% else %}{{ (comment.author.full_name or comment.author.username)[:1]|upper }}{% endif %}
+                                                </a>
+                                                    <div class="comment-content">
+                                                        <div class="comment-meta">{{ comment.author.full_name }} <span>{{ comment.created_at|timeago }}</span></div>
+                                                        <div class="comment-text">{{ comment.body }}</div>
+                                                        {% if comment.user_id != student.id %}
+                                                            <details class="report">
+                                                                <summary class="text-btn danger">Report comment</summary>
+                                                                <form class="report-form" method="POST" action="{{ url_for('report_comment', comment_id=comment.id) }}">
+                                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                    <select name="reason" required aria-label="Reason for comment report">
+                                                                        <option value="">Reason...</option>
+                                                                        {% for key, label in report_reasons.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+                                                                    </select>
+                                                                    <button class="btn" type="submit">Send</button>
+                                                                </form>
+                                                            </details>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </details>
+                                    {% endif %}
+
+                                    <form class="comment-form" method="POST"
+                                          action="{{ url_for('add_comment', post_id=post.id) }}">
+                                        <input type="hidden" name="csrf_token"
+                                               value="{{ csrf_token() }}">
+                                        <input type="text" name="body" maxlength="500"
+                                               placeholder="Write a comment..."
+                                               aria-label="Write a comment" required>
+                                        <button class="btn btn-primary" type="submit">Send</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </article>
+                    {% else %}
+                        <div class="empty">
+                            <div style="font-size:30px;margin-bottom:8px;">🌱</div>
+                            <strong>Your campus feed starts here.</strong>
+                            <p style="margin-top:7px;">Be the first to share something with the FUNAAB community.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Right sidebar -->
+            <aside class="side-stack">
+                <div class="card card-pad">
+                    <a class="profile-row" href="{{ url_for('profile', username=student.username) }}">
+                        <div class="avatar">
+                            {% if student.profile_picture %}
+                                <img src="{{ student.profile_picture }}" alt="">
+                            {% else %}
+                                {{ (student.full_name or student.username)[:1] | upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="profile-name">{{ student.full_name }}</div>
+                            <div class="profile-handle">@{{ student.username }}</div>
+                        </div>
+                    </a>
+                    <a class="text-btn" href="{{ url_for('profile', username=student.username) }}">View full profile →</a>
+
+                    <div class="detail">
+                        <small>Department</small>
+                        {{ student.department }}
+                    </div>
+
+                    <div class="detail">
+                        <small>Level</small>
+                        {{ student.level }} Level
+                    </div>
+
+                    <div class="detail">
+                        <small>Campus community</small>
+                        FUNAAB ONE student network
+                    </div>
+                </div>
+
+                <div class="card card-pad">
+                    <h3>Announcements</h3>
+                    <p class="muted">
+                        Campus announcements will appear here when the
+                        announcements feature is available.
+                    </p>
+                </div>
+
+                <div class="card card-pad">
+                    <h3>Coming next</h3>
+                    <p class="muted">More ways to connect around campus.</p>
+                    <div class="chips">
+                        <span class="chip">Academics</span>
+                        <span class="chip">Communities</span>
+                        <span class="chip">Messages</span>
+                        <span class="chip">Campus Map</span>
+                        <span class="chip">AI Assistant</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Theme toggle
+    const root = document.documentElement;
+    const themeBtn = document.getElementById("themeBtn");
+
+    function setTheme(theme) {
+        root.dataset.theme = theme;
+        themeBtn.textContent = theme === "dark" ? "☼ Theme" : "☾ Theme";
+
+        const themeColor = document.querySelector('meta[name="theme-color"]');
+        if (themeColor) {
+            themeColor.content = theme === "dark" ? "#07110F" : "#F4F8F5";
+        }
+    }
+
+    setTheme(root.dataset.theme || "dark");
+
+    themeBtn.addEventListener("click", () => {
+        const next = root.dataset.theme === "dark" ? "light" : "dark";
+        setTheme(next);
+        try {
+            localStorage.setItem("funaab-one-theme", next);
+        } catch (e) {}
+    });
+
+    // Mobile sidebar
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const menuBtn = document.getElementById("menuBtn");
+
+    function closeMenu() {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+    }
+
+    menuBtn.addEventListener("click", () => {
+        sidebar.classList.add("open");
+        overlay.classList.add("show");
+    });
+
+    overlay.addEventListener("click", closeMenu);
+
+    document.querySelectorAll(".sidebar a").forEach(link => {
+        link.addEventListener("click", closeMenu);
+    });
+
+    // Post character counter and media attachment
+    const postForm = document.getElementById("postForm");
+    const postBody = document.getElementById("postBody");
+    const counter = document.getElementById("counter");
+    const postBtn = document.getElementById("postBtn");
+    const mediaInput = document.getElementById("mediaInput");
+    const attachBtn = document.getElementById("attachBtn");
+    const removeMediaBtn = document.getElementById("removeMediaBtn");
+    const mediaName = document.getElementById("mediaName");
+
+    function updatePostCounter() {
+        const length = postBody.value.length;
+        const hasMedia = mediaInput.files.length > 0;
+        counter.textContent = `${length} / 280`;
+        counter.classList.toggle("over", length > 280);
+        postBtn.disabled = (!postBody.value.trim() && !hasMedia) || length > 280;
+    }
+    postBody.addEventListener("input", updatePostCounter);
+    attachBtn.addEventListener("click", () => mediaInput.click());
+    mediaInput.addEventListener("change", () => {
+        const file = mediaInput.files[0];
+        mediaName.textContent = file ? `${file.name} (${(file.size / 1048576).toFixed(1)} MB)` : "";
+        removeMediaBtn.hidden = !file;
+        updatePostCounter();
+    });
+    removeMediaBtn.addEventListener("click", () => {
+        mediaInput.value = "";
+        mediaName.textContent = "";
+        removeMediaBtn.hidden = true;
+        updatePostCounter();
+    });
+    postForm.addEventListener("submit", event => {
+        if ((!postBody.value.trim() && !mediaInput.files.length) || postBody.value.length > 280) {
+            event.preventDefault();
+            updatePostCounter();
+            return;
+        }
+        postBtn.disabled = true;
+        postBtn.textContent = "Publishing...";
+    });
+    updatePostCounter();
+
+    // Show/hide comment sections
+    document.querySelectorAll(".comment-toggle").forEach(button => {
+        button.addEventListener("click", () => {
+            const target = document.getElementById(button.dataset.target);
+            if (!target) return;
+
+            target.hidden = !target.hidden;
+
+            if (!target.hidden) {
+                const input = target.querySelector('input[name="body"]');
+                if (input) input.focus();
+            }
+        });
+    });
+</script>
+</body>
+</html>

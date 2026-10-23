@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07110F">
+  <title>FUNAAB Market</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#07110F;--surface:#0D1D17;--surface2:#14291F;--text:#EDF7F1;--muted:#9AB0A3;--green:#2EE59D;--ongreen:#04150D;--border:rgba(255,255,255,.11);--danger:#FF8795;--shadow:0 12px 35px rgba(0,0,0,.12)}
+    [data-theme="light"]{--bg:#F4F8F5;--surface:#fff;--surface2:#E7F2EA;--text:#102B1E;--muted:#587064;--green:#087D50;--ongreen:#fff;--border:rgba(10,50,30,.14);--danger:#BC2540;--shadow:0 12px 35px rgba(10,50,30,.06)}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"DM Sans",sans-serif}a{color:inherit;text-decoration:none}button,input,textarea,select{font:inherit}button{cursor:pointer}h1,h2,h3,.brand{font-family:"Space Grotesk",sans-serif}[hidden]{display:none!important}
+    .layout{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:238px;padding:22px 15px;background:var(--surface);border-right:1px solid var(--border);z-index:5}.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;padding:3px 8px 26px}.logo{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:var(--green);color:var(--ongreen);font-weight:800}.nav-label{color:var(--muted);font-size:10px;letter-spacing:.12em;font-weight:700;margin:17px 10px 8px;text-transform:uppercase}.nav a{display:flex;gap:11px;align-items:center;padding:12px;border-radius:11px;margin-bottom:4px;color:var(--muted);font-weight:600}.nav a:hover,.nav a.active{background:var(--surface2);color:var(--text)}.nav a.active{box-shadow:inset 3px 0 var(--green)}
+    .main{margin-left:238px;padding:30px;max-width:1500px}.topline{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}.topline h1{font-size:clamp(28px,4vw,38px);margin:0 0 5px}.muted{color:var(--muted)}.sub{margin:0;color:var(--muted)}.top-actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:11px 15px;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px}.btn.primary{background:var(--green);border-color:var(--green);color:var(--ongreen)}.btn.danger{color:var(--danger)}.btn.small{padding:8px 10px;font-size:13px}.panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow)}.search-row{display:grid;grid-template-columns:minmax(180px,1fr) 190px auto;gap:10px;margin-bottom:14px}.field{width:100%;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:11px;padding:12px 13px;outline:none;min-width:0}.field:focus{border-color:var(--green)}textarea.field{resize:vertical;min-height:100px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 24px}.chip{padding:8px 12px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:13px;font-weight:700}.chip.active,.chip:hover{background:var(--surface2);color:var(--text);border-color:var(--green)}.flash{padding:12px 14px;border-radius:12px;margin:0 0 12px;background:var(--surface2);border:1px solid var(--border)}.flash.error{border-color:var(--danger)}.flash.success{border-color:var(--green)}
+    .market-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.listing{overflow:hidden;padding:0;display:flex;flex-direction:column;min-width:0}.listing-image{width:100%;height:210px;object-fit:cover;background:var(--surface2);display:block}.image-placeholder{height:210px;background:linear-gradient(135deg,var(--surface2),var(--surface));display:grid;place-items:center;color:var(--muted);font-size:42px}.listing-body{padding:15px;display:flex;flex-direction:column;gap:10px;flex:1}.badges{display:flex;gap:6px;flex-wrap:wrap}.tag{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;background:var(--surface2);font-size:11px;font-weight:700;color:var(--muted)}.tag.green{color:var(--green)}.listing h2{font-size:18px;margin:0;overflow-wrap:anywhere}.price{font-family:"Space Grotesk",sans-serif;font-size:22px;font-weight:700}.desc{color:var(--muted);font-size:14px;line-height:1.55;white-space:pre-line;overflow-wrap:anywhere}.seller{display:flex;align-items:center;gap:9px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border)}.avatar{width:34px;height:34px;flex:0 0 34px;border-radius:50%;object-fit:cover;background:var(--surface2);display:grid;place-items:center;font-weight:700}.seller-name{font-size:13px;font-weight:700}.seller-handle{font-size:12px;color:var(--muted)}.card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:3px}.card-actions form{display:inline-flex}.empty{grid-column:1/-1;text-align:center;padding:48px 20px}.empty .emoji{font-size:42px;margin-bottom:10px}.empty h2{margin:0 0 8px}.empty p{color:var(--muted);margin:0 0 18px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .full{grid-column:1/-1}.label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}.help{font-size:12px;color:var(--muted);margin-top:6px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:18px;z-index:20;overflow:auto}.modal-backdrop.open{display:flex}.modal{width:min(640px,100%);max-height:92vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px}.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.modal-head h2{margin:0}.close{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:10px;padding:8px 11px}.file-input{padding:10px}.mine-label{font-size:12px;color:var(--green);font-weight:700}
+    @media(max-width:1100px){.market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.main{padding:24px}}
+    @media(max-width:760px){.sidebar{display:none}.main{margin:0;padding:20px 14px 88px}.topline{align-items:flex-start;flex-direction:column}.top-actions{width:100%}.top-actions .btn{flex:1}.search-row{grid-template-columns:1fr 1fr}.search-row input{grid-column:1/-1}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.listing-image,.image-placeholder{height:150px}.listing-body{padding:11px;gap:8px}.listing h2{font-size:15px}.price{font-size:18px}.desc{font-size:13px}.seller{align-items:flex-start}.avatar{width:29px;height:29px;flex-basis:29px}.seller-name{font-size:12px}.seller-handle{font-size:11px}.card-actions .btn{width:100%}.card-actions{display:grid;grid-template-columns:1fr}.panel{padding:14px}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.mobile-nav{position:fixed;display:flex;bottom:0;left:0;right:0;z-index:10;justify-content:space-around;background:var(--surface);border-top:1px solid var(--border);padding:8px 4px calc(8px + env(safe-area-inset-bottom))}.mobile-nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--muted);padding:4px 7px}.mobile-nav a.active{color:var(--green)}.mobile-nav .nav-icon{font-size:19px}}
+    @media(min-width:761px){.mobile-nav{display:none}}
+  </style>
+  <script>try{const t=localStorage.getItem('funaab-one-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('dashboard') }}"><span class="logo">F</span><span>FUNAAB ONE</span></a>
+    <div class="nav-label">Campus</div>
+    <nav class="nav">
+      <a href="{{ url_for('dashboard') }}"><span>⌂</span> Home feed</a>
+      <a href="{{ url_for('find_students') }}"><span>♙</span> Find students</a>
+      <a href="{{ url_for('communities') }}"><span>◈</span> Communities</a>
+      <a href="{{ url_for('messages_inbox') }}"><span>✉</span> Messages{% if unread_message_count %}<span class="tag green">{{ unread_message_count }}</span>{% endif %}</a>
+      <a class="active" href="{{ url_for('market_place') }}"><span>🛍</span> Market</a>
+      <a href="{{ url_for('notifications_center') }}"><span>♧</span> Notifications{% if unread_notification_count %}<span class="tag green">{{ unread_notification_count }}</span>{% endif %}</a>
+      <a href="{{ url_for('profile', username=current_user.username) }}"><span>♙</span> My profile</a>
+    </nav>
+  </aside>
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+    <header class="topline">
+      <div><h1>FUNAAB Market 🛍️</h1><p class="sub">Buy, sell, or find what you need from fellow students.</p></div>
+      <div class="top-actions"><button class="btn" type="button" onclick="openListing('wanted')">＋ Post what I need</button><button class="btn primary" type="button" onclick="openListing('sale')">＋ Sell an item</button></div>
+    </header>
+
+    <section class="panel" aria-label="Search marketplace">
+      <form method="get" action="{{ url_for('market_place') }}" class="search-row">
+        <input class="field" type="search" name="q" value="{{ query }}" placeholder="Search items, keywords, sellers..." aria-label="Search items, keywords, sellers">
+        <select class="field" name="category" aria-label="Filter category"><option value="">All categories</option>{% for category in market_categories %}<option value="{{ category }}" {% if category_filter == category %}selected{% endif %}>{{ category }}</option>{% endfor %}</select>
+        <input type="hidden" name="kind" value="{{ kind }}"><button class="btn primary" type="submit">Search</button>
+      </form>
+      <div class="filters">
+        <a class="chip {% if kind == 'all' %}active{% endif %}" href="{{ url_for('market_place', kind='all', q=query, category=category_filter) }}">Everything</a>
+        <a class="chip {% if kind == 'sale' %}active{% endif %}" href="{{ url_for('market_place', kind='sale', q=query, category=category_filter) }}">For sale</a>
+        <a class="chip {% if kind == 'wanted' %}active{% endif %}" href="{{ url_for('market_place', kind='wanted', q=query, category=category_filter) }}">Wanted</a>
+        <a class="chip {% if status_filter == 'mine' %}active{% endif %}" href="{{ url_for('market_place', status='mine') }}">My posts</a>
+      </div>
+    </section>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0 14px"><div><h2 style="margin:0;font-size:21px">{% if status_filter == 'mine' %}My marketplace posts{% elif kind == 'wanted' %}What students are looking for{% elif kind == 'sale' %}Items for sale{% else %}Recently posted{% endif %}</h2><p class="muted" style="margin:5px 0 0;font-size:13px">{{ listings|length }} result{% if listings|length != 1 %}s{% endif %}{% if query %} for “{{ query }}”{% endif %}</p></div></div>
+
+    <section class="market-grid">
+      {% for listing in listings %}
+      <article class="panel listing">
+        {% if listing.image_url %}<img class="listing-image" src="{{ listing.image_url }}" alt="Photo of {{ listing.title }}" loading="lazy">{% else %}<div class="image-placeholder" aria-label="No image provided">{% if listing.listing_type == 'wanted' %}🔎{% else %}🛍️{% endif %}</div>{% endif %}
+        <div class="listing-body">
+          <div class="badges"><span class="tag {% if listing.listing_type == 'wanted' %}green{% endif %}">{% if listing.listing_type == 'wanted' %}WANTED{% else %}FOR SALE{% endif %}</span><span class="tag">{{ listing.category }}</span>{% if listing.status == 'sold' %}<span class="tag">SOLD</span>{% endif %}</div>
+          <h2>{{ listing.title }}</h2>
+          {% if listing.price is not none %}<div class="price">₦{{ '{:,.0f}'.format(listing.price) }}{% if listing.listing_type == 'wanted' %} budget{% endif %}</div>{% else %}<div class="price" style="font-size:16px">Price negotiable / not specified</div>{% endif %}
+          {% if listing.item_condition %}<div class="muted" style="font-size:12px">Condition: {{ listing.item_condition }}</div>{% endif %}
+          <div class="desc">{{ listing.description }}</div>
+          <div class="seller">
+            {% if listing.seller.profile_picture %}<img class="avatar" src="{{ listing.seller.profile_picture }}" alt="">{% else %}<div class="avatar">{{ (listing.seller.full_name or listing.seller.username)[:1]|upper }}</div>{% endif %}
+            <div style="min-width:0"><div class="seller-name">{{ listing.seller.full_name }}</div><div class="seller-handle">@{{ listing.seller.username }} · {{ listing.created_at|timeago }}</div></div>
+          </div>
+          <div class="card-actions">
+            {% if listing.user_id != current_user.id %}
+              {% if not listing.seller.is_suspended %}<form method="post" action="{{ url_for('start_direct_message', username=listing.seller.username) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn primary" type="submit">✉ Message {% if listing.listing_type == 'wanted' %}student{% else %}seller{% endif %}</button></form>{% endif %}
+              <a class="btn" href="{{ url_for('profile', username=listing.seller.username) }}">View profile</a>
+            {% else %}
+              <span class="mine-label">Your post</span>
+              {% if listing.status == 'active' and listing.listing_type == 'sale' %}<form method="post" action="{{ url_for('market_mark_sold', listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small" type="submit">Mark sold</button></form>{% elif listing.status == 'sold' %}<form method="post" action="{{ url_for('market_reopen_listing', listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small" type="submit">Relist</button></form>{% endif %}
+              <form method="post" action="{{ url_for('market_delete_listing', listing_id=listing.id) }}" onsubmit="return confirm('Delete this marketplace post? This cannot be undone.');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn small danger" type="submit">Delete</button></form>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% else %}
+      <div class="panel empty"><div class="emoji">{% if query %}🔎{% else %}🛍️{% endif %}</div><h2>{% if query %}No matching posts yet{% else %}Nothing posted here yet{% endif %}</h2><p>{% if query %}Try a different keyword or category, or post a request so students can find you.{% else %}Be the first to post an item for sale or tell students what you are looking for.{% endif %}</p><button class="btn primary" type="button" onclick="openListing('{% if kind == 'wanted' %}wanted{% else %}sale{% endif %}')">＋ Create a post</button></div>
+      {% endfor %}
+    </section>
+  </main>
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <a href="{{ url_for('dashboard') }}"><span class="nav-icon">⌂</span>Home</a>
+    <a href="{{ url_for('find_students') }}"><span class="nav-icon">♙</span>Students</a>
+    <a class="active" href="{{ url_for('market_place') }}"><span class="nav-icon">🛍</span>Market</a>
+    <a href="{{ url_for('messages_inbox') }}"><span class="nav-icon">✉</span>Messages</a>
+    <a href="{{ url_for('profile', username=current_user.username) }}"><span class="nav-icon">☺</span>Profile</a>
+  </nav>
+</div>
+
+<div class="modal-backdrop" id="listingModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="if(event.target===this)closeListing()">
+  <div class="modal">
+    <div class="modal-head"><div><h2 id="modalTitle">Create a marketplace post</h2><p class="sub" style="font-size:13px;margin-top:5px">Be clear and honest so other students know what to expect.</p></div><button class="close" type="button" onclick="closeListing()" aria-label="Close">✕</button></div>
+    <form method="post" action="{{ url_for('market_place') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-grid">
+        <div class="full"><label class="label" for="listing_type">What do you want to post?</label><select class="field" id="listing_type" name="listing_type" required onchange="updateListingForm()"><option value="sale">I'm selling an item</option><option value="wanted">I'm looking for something</option></select></div>
+        <div class="full"><label class="label" for="title">Title</label><input class="field" id="title" name="title" maxlength="100" required placeholder="e.g. Used standing fan for sale"></div>
+        <div><label class="label" for="category">Category</label><select class="field" id="category" name="category" required>{% for category in market_categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</select></div>
+        <div id="conditionWrap"><label class="label" for="item_condition">Condition</label><select class="field" id="item_condition" name="item_condition"><option value="">Choose condition</option>{% for condition in market_conditions %}<option value="{{ condition }}">{{ condition }}</option>{% endfor %}</select></div>
+        <div id="priceWrap"><label class="label" for="price">Price (₦)</label><input class="field" id="price" name="price" type="number" min="0" max="2000000000" step="1" placeholder="e.g. 15000"></div>
+        <div class="full"><label class="label" for="description">Description</label><textarea class="field" id="description" name="description" maxlength="1500" required placeholder="Describe the item, location for pickup, or what you need..."></textarea></div>
+        <div class="full" id="imageWrap"><label class="label" for="image">Photo (optional)</label><input class="field file-input" id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><div class="help">JPG, PNG, WEBP, or GIF · maximum 10 MB. Use a clear photo of the actual item.</div></div>
+        <div class="full"><button class="btn primary" style="width:100%" type="submit">Publish post</button><div class="help">Never share passwords or payment PINs. Check an item before paying and meet safely.</div></div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openListing(kind){const modal=document.getElementById('listingModal');modal.classList.add('open');document.getElementById('listing_type').value=kind||'sale';updateListingForm();document.body.style.overflow='hidden';setTimeout(()=>document.getElementById('title').focus(),50)}
+function closeListing(){document.getElementById('listingModal').classList.remove('open');document.body.style.overflow=''}
+function updateListingForm(){const wanted=document.getElementById('listing_type').value==='wanted';document.getElementById('modalTitle').textContent=wanted?'Post what you are looking for':'Sell an item';document.getElementById('conditionWrap').hidden=wanted;document.getElementById('priceWrap').hidden=false;document.getElementById('imageWrap').hidden=wanted;document.getElementById('item_condition').required=!wanted;document.getElementById('price').required=!wanted;document.getElementById('price').placeholder=wanted?'Optional budget, e.g. 12000':'e.g. 15000';document.getElementById('image').required=false}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeListing()});
+</script>
+</body>
+</html>

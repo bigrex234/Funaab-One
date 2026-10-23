@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Edit profile · FUNAAB ONE</title>
+<style>
+:root{color-scheme:dark;--bg:#07130f;--panel:#0d2119;--line:#254333;--text:#eef8f0;--muted:#9bb4a4;--green:#69e69b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#19432d,transparent 45%),var(--bg);color:var(--text);font:15px/1.5 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{width:min(680px,calc(100% - 28px));margin:38px auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}a{color:inherit;text-decoration:none}.brand{font-weight:800}.btn,button{display:inline-block;border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:#14291f;color:var(--text);font-weight:700;cursor:pointer}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:26px}h1{margin:0 0 6px;font-size:29px}.muted{color:var(--muted);margin-top:0}
+label{display:block;font-weight:650;font-size:13px;margin:17px 0 7px}input,select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}textarea{min-height:105px;resize:vertical}input[type=file]{padding:9px}.avatar{width:84px;height:84px;object-fit:cover;border-radius:22px;background:#183e2b;display:grid;place-items:center;font-size:27px;font-weight:800;color:var(--green);margin:16px 0}.submit{margin-top:22px;width:100%;background:var(--green);color:#062013;border:0}.flash{padding:10px 12px;margin:8px 0;border-radius:10px;background:#10291f;color:#d9f7e2}.flash.error{color:#ffc1c1}@media(max-width:520px){.card{padding:19px}main{margin:22px auto}}
+</style></head><body><main>
+<header class="top"><a class="brand" href="{{ url_for('dashboard') }}">🌱 FUNAAB ONE</a><a class="btn" href="{{ url_for('profile', username=student.username) }}">Cancel</a></header>
+<section class="card"><h1>Edit your profile</h1><p class="muted">Keep your campus profile up to date.</p>
+{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category|e }}">{{ message }}</div>{% endfor %}{% endwith %}
+<div class="avatar">{% if student.profile_picture %}<img src="{{ student.profile_picture }}" alt="Current profile picture" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">{% else %}{{ (student.full_name or student.username)[:1]|upper }}{% endif %}</div>
+<form method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label for="full_name">Full name</label><input id="full_name" name="full_name" maxlength="100" required value="{{ student.full_name }}">
+<label for="profile_picture">Profile picture (optional)</label><input id="profile_picture" name="profile_picture" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><p class="muted">JPG, PNG, WEBP, or GIF · Maximum 5 MB. Leave empty to keep your current picture.</p>
+<label for="department">Department</label><select id="department" name="department" required><option value="">Select department</option>{% for group,programmes in department_groups.items() %}<optgroup label="{{ group }}">{% for programme in programmes %}<option value="{{ programme }}" {% if student.department==programme %}selected{% endif %}>{{ programme }}</option>{% endfor %}</optgroup>{% endfor %}</select>
+<label for="level">Academic level</label><select id="level" name="level" required>{% for level in ['100','200','300','400','500','600'] %}<option value="{{ level }}" {% if student.level==level %}selected{% endif %}>{{ level }} Level</option>{% endfor %}</select>
+<label for="bio">Bio (optional)</label><textarea id="bio" name="bio" maxlength="300" placeholder="Tell campus a little about yourself…">{{ student.bio or '' }}</textarea><p class="muted">Up to 300 characters.</p>
+<button class="submit" type="submit">Save changes</button></form></section></main></body></html>

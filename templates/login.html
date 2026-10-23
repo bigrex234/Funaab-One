@@ -1,0 +1,385 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In | FUNAAB ONE</title>
+
+    <style>
+        :root {
+            --green: #087443;
+            --green-dark: #075c36;
+            --bg: #f3f7f4;
+            --card: #ffffff;
+            --text: #17251d;
+            --muted: #6b786f;
+            --border: #dce6de;
+            --input: #ffffff;
+        }
+
+        body.dark {
+            --bg: #101a14;
+            --card: #19271e;
+            --text: #edf6ef;
+            --muted: #a9b9ad;
+            --border: #34483a;
+            --input: #111c15;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        header {
+            min-height: 76px;
+            padding: 16px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--card);
+        }
+
+        .brand {
+            color: var(--green);
+            font-size: 1.45rem;
+            font-weight: 800;
+            text-decoration: none;
+            letter-spacing: -0.6px;
+        }
+
+        .brand span {
+            color: var(--text);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .header-right a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.92rem;
+        }
+
+        .theme-btn {
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+            padding: 9px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        main {
+            flex: 1;
+            display: grid;
+            place-items: center;
+            padding: 42px 18px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            padding: 36px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            box-shadow: 0 14px 45px rgba(13, 55, 29, 0.07);
+        }
+
+        .icon {
+            width: 58px;
+            height: 58px;
+            display: grid;
+            place-items: center;
+            border-radius: 17px;
+            background: #e1f3e7;
+            color: var(--green);
+            font-size: 1.7rem;
+            margin-bottom: 22px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+
+        .field {
+            margin-bottom: 19px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 650;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--input);
+            color: var(--text);
+            font: inherit;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(8, 116, 67, 0.12);
+        }
+
+        .password-wrap {
+            position: relative;
+        }
+
+        .password-wrap input {
+            padding-right: 75px;
+        }
+
+        .show-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: var(--green);
+            font-weight: 650;
+            cursor: pointer;
+        }
+
+        .login-btn {
+            width: 100%;
+            border: none;
+            border-radius: 11px;
+            background: var(--green);
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 14px;
+            margin-top: 5px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .login-btn:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+        }
+
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .message {
+            padding: 12px 14px;
+            margin-bottom: 9px;
+            border-radius: 9px;
+            background: #fff0ee;
+            color: #a12b21;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .message.success {
+            background: #e6f7eb;
+            color: #176438;
+        }
+
+        .signup {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin-top: 25px;
+        }
+
+        .signup a {
+            color: var(--green);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 22px 16px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 15px 5%;
+            }
+
+            .header-right {
+                gap: 10px;
+            }
+
+            .header-right a {
+                font-size: 0.85rem;
+            }
+
+            .login-card {
+                padding: 27px 22px;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <a class="brand" href="{{ url_for('home') }}">
+            FUNAAB <span>ONE</span>
+        </a>
+
+        <div class="header-right">
+            <a href="{{ url_for('home') }}">Home</a>
+            <button class="theme-btn" id="themeToggle" type="button"
+                    aria-label="Toggle dark mode">🌙</button>
+        </div>
+    </header>
+
+    <main>
+        <section class="login-card">
+            <div class="icon" aria-hidden="true">🎓</div>
+
+            <h1>Welcome back!</h1>
+            <p class="subtitle">
+                Log in to reconnect with your FUNAAB community.
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="messages">
+                        {% for category, message in messages %}
+                            <div class="message {% if category == 'success' %}success{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% if error %}
+                <div class="messages">
+                    <div class="message">{{ error }}</div>
+                </div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <input type="hidden" name="csrf_token"
+                       value="{{ csrf_token() }}">
+
+                <div class="field">
+                    <label for="identifier">Username or email</label>
+                    <input
+                        type="text"
+                        id="identifier"
+                        name="identifier"
+                        placeholder="Enter your username or email"
+                        value="{{ identifier | default('') }}"
+                        autocomplete="username"
+                        required
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <div class="password-wrap">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button class="show-password" type="button"
+                                id="showPassword">Show</button>
+                    </div>
+                </div>
+
+                <button class="login-btn" type="submit">Log In</button>
+            </form>
+
+            <p class="signup">
+                New to FUNAAB ONE?
+                <a href="{{ url_for('register') }}">Create an account</a>
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        © 2026 FUNAAB ONE · Built for the FUNAAB community.
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById("themeToggle");
+
+        function applyTheme(theme) {
+            document.body.classList.toggle("dark", theme === "dark");
+            themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+        }
+
+        let savedTheme = "light";
+        try {
+            savedTheme = localStorage.getItem("funaab-theme") || "light";
+        } catch (error) {
+            // Use light theme if browser storage is unavailable.
+        }
+        applyTheme(savedTheme);
+
+        themeToggle.addEventListener("click", () => {
+            const nextTheme = document.body.classList.contains("dark")
+                ? "light" : "dark";
+            applyTheme(nextTheme);
+            try {
+                localStorage.setItem("funaab-theme", nextTheme);
+            } catch (error) {
+                // Theme still changes for this page view.
+            }
+        });
+
+        document.getElementById("showPassword").addEventListener("click", () => {
+            const password = document.getElementById("password");
+            const button = document.getElementById("showPassword");
+            const reveal = password.type === "password";
+
+            password.type = reveal ? "text" : "password";
+            button.textContent = reveal ? "Hide" : "Show";
+        });
+    </script>
+</body>
+</html>
