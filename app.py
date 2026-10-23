@@ -2747,6 +2747,15 @@ def migrate_optional_profile_columns():
             connection.execute(text(f"ALTER TABLE user ADD COLUMN is_suspended BOOLEAN NOT NULL DEFAULT {boolean_default}"))
 
 
+# Vercel imports this module instead of running it as __main__.
+# Create tables on the first serverless initialization so a fresh Supabase
+# database is ready for registration/login. This does not import SQLite data.
+if os.environ.get("VERCEL"):
+    with app.app_context():
+        db.create_all()
+        migrate_optional_profile_columns()
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
