@@ -1,0 +1,22 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Local databases and uploaded files
+instance/*.db
+instance/*.sqlite
+instance/*.sqlite3
+static/uploads/
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
