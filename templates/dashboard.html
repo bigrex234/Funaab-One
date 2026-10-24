@@ -1051,23 +1051,21 @@
                                         {% endfor %}
                                     {% endfor %}
                                     {% set poll_closed = post.poll.closes_at and post.poll.closes_at <= now %}
-                                    <div class="poll-card">
+                                    <div class="poll-card" data-poll-card="{{ post.poll.id }}" data-poll-allow-change="{{ 'true' if post.poll.allow_vote_change else 'false' }}">
                                         <strong>📊 Poll</strong>
-                                        <form method="POST" action="{{ url_for('vote_poll', poll_id=post.poll.id) }}">
+                                        <form class="poll-vote-form" method="POST" action="{{ url_for('vote_poll', poll_id=post.poll.id) }}">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             {% for option in post.poll.options %}
                                                 {% set option_votes = option.votes|length %}
                                                 {% set percent = ((option_votes * 100 / ns.total)|round|int) if ns.total else 0 %}
-                                                <button class="poll-choice" type="submit" name="option_id" value="{{ option.id }}" {% if poll_closed %}disabled{% endif %}>
-                                                    <span>{{ '✓ ' if ns.my_vote == option.id else '' }}{{ option.text }}</span>
-                                                    {% if ns.my_vote is not none or poll_closed %}
-                                                        <span class="poll-meta">{{ option_votes }} vote{{ '' if option_votes == 1 else 's' }} · {{ percent }}%</span>
-                                                        <div class="poll-result-track"><div class="poll-result-fill" style="width:{{ percent }}%"></div></div>
-                                                    {% endif %}
+                                                <button class="poll-choice" type="submit" name="option_id" value="{{ option.id }}" data-poll-option="{{ option.id }}" {% if poll_closed %}disabled{% endif %}>
+                                                    <span class="poll-option-text">{{ '✓ ' if ns.my_vote == option.id else '' }}{{ option.text }}</span>
+                                                    <span class="poll-option-result poll-meta" {% if ns.my_vote is none and not poll_closed %}hidden{% endif %}>{{ option_votes }} vote{{ '' if option_votes == 1 else 's' }} · {{ percent }}%</span>
+                                                    <div class="poll-result-track" {% if ns.my_vote is none and not poll_closed %}hidden{% endif %}><div class="poll-result-fill" style="width:{{ percent }}%"></div></div>
                                                 </button>
                                             {% endfor %}
                                         </form>
-                                        <div class="poll-meta">{{ ns.total }} vote{{ '' if ns.total == 1 else 's' }} · {% if poll_closed %}Voting closed{% elif post.poll.closes_at %}Closes {{ post.poll.closes_at.strftime('%b %d, %H:%M') }}{% else %}Open poll{% endif %}{% if ns.my_vote is not none and not poll_closed %} · You can change your vote{% endif %}</div>
+                                        <div class="poll-meta poll-status" role="status" aria-live="polite">{{ ns.total }} vote{{ '' if ns.total == 1 else 's' }} · {% if poll_closed %}Voting closed{% elif post.poll.closes_at %}Closes {{ post.poll.closes_at.strftime('%b %d, %H:%M') }}{% else %}Open poll{% endif %}{% if ns.my_vote is not none and not poll_closed %} · You can change your vote{% endif %}</div>
                                     </div>
                                 {% endif %}
 
@@ -1307,6 +1305,54 @@
     }
 
     setTheme(root.dataset.theme || "dark");
+
+    // Poll voting: submit in the background and render server-confirmed results.
+    document.addEventListener("submit", async (event) => {
+        const form = event.target.closest("form.poll-vote-form");
+        if (!form) return;
+        event.preventDefault();
+        const card = form.closest("[data-poll-card]");
+        const button = event.submitter;
+        if (!card || !button || button.disabled) return;
+        const status = card.querySelector(".poll-status");
+        const buttons = [...form.querySelectorAll("button[data-poll-option]")];
+        const originalStatus = status?.textContent || "";
+        let keepDisabled = false;
+        buttons.forEach(item => item.disabled = true);
+        if (status) status.textContent = "Saving your vote…";
+        const body = new FormData(form);
+        body.set("option_id", button.value);
+        try {
+            const response = await fetch(form.action, {
+                method: "POST", body,
+                headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" },
+                credentials: "same-origin"
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) throw new Error(result.error || result.message || "Could not save your vote.");
+            result.options.forEach(option => {
+                const optionButton = form.querySelector(`[data-poll-option="${option.id}"]`);
+                if (!optionButton) return;
+                const text = optionButton.querySelector(".poll-option-text");
+                const resultText = optionButton.querySelector(".poll-option-result");
+                const track = optionButton.querySelector(".poll-result-track");
+                const fill = track?.querySelector(".poll-result-fill");
+                if (text) text.textContent = `${Number(option.id) === Number(result.my_vote) ? "✓ " : ""}${option.text}`;
+                if (resultText) { resultText.hidden = false; resultText.textContent = `${option.votes} ${option.votes === 1 ? "vote" : "votes"} · ${option.percent}%`; }
+                if (track) track.hidden = false;
+                if (fill) fill.style.width = `${option.percent}%`;
+            });
+            const closedText = result.closed ? "Voting closed" : result.closes_at ? `Closes ${result.closes_at}` : "Open poll";
+            const canChange = result.allow_vote_change && !result.closed;
+            if (status) status.textContent = `${result.total_votes} ${result.total_votes === 1 ? "vote" : "votes"} · ${closedText}${result.my_vote && canChange ? " · You can change your vote" : ""}`;
+            keepDisabled = result.closed || (!result.allow_vote_change && Boolean(result.my_vote));
+            buttons.forEach(item => { item.disabled = keepDisabled; });
+        } catch (error) {
+            if (status) status.textContent = error?.message || originalStatus || "Please try again.";
+        } finally {
+            if (!keepDisabled) buttons.forEach(item => item.disabled = false);
+        }
+    });
 
     // Toggle likes in place; retain normal form behaviour if the request fails.
     document.addEventListener("submit", async (event) => {
