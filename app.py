@@ -385,6 +385,9 @@ class Conversation(db.Model):
     """A private direct conversation or a multi-member group chat."""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=True)  # set for group chats
+    group_description = db.Column(db.String(500), nullable=True)
+    group_rules = db.Column(db.String(1000), nullable=True)
+    group_avatar_url = db.Column(db.String(500), nullable=True)
     is_group = db.Column(db.Boolean, nullable=False, default=False)
     creator_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
@@ -1897,6 +1900,68 @@ def create_group_conversation():
         flash("Could not create the group chat. Please try again.", "error")
         return redirect(url_for("messages_inbox"))
 
+
+
+@app.route("/messages/<int:conversation_id>/customize", methods=["POST"])
+@login_required
+def customize_group(conversation_id):
+    """Update group details without changing its membership or message history."""
+    conversation = db.session.get(Conversation, conversation_id)
+    if conversation is None:
+        abort(404)
+    if not conversation.is_group:
+        abort(400, description="Only group chats can be customized.")
+    if _conversation_member(conversation_id) is None:
+        abort(403)
+    if conversation.creator_id != current_user.id and not current_user.is_admin:
+        abort(403, description="Only the group creator or a site administrator can customize this group.")
+
+    title = request.form.get("title", "").strip()
+    description = request.form.get("group_description", "").strip()
+    rules = request.form.get("group_rules", "").strip()
+    avatar_file = request.files.get("group_avatar")
+    if not 3 <= len(title) <= 100:
+        flash("Group name must be between 3 and 100 characters.", "error")
+        return redirect(url_for("conversation_view", conversation_id=conversation.id))
+    if len(description) > 500 or len(rules) > 1000:
+        flash("Description must be 500 characters or fewer and rules 1,000 characters or fewer.", "error")
+        return redirect(url_for("conversation_view", conversation_id=conversation.id))
+
+    avatar_url = conversation.group_avatar_url
+    try:
+        if avatar_file and avatar_file.filename:
+            data = avatar_file.stream.read(3 * 1024 * 1024 + 1)
+            if not data or len(data) > 3 * 1024 * 1024:
+                raise ValueError("Group pictures must be 3 MB or smaller.")
+            valid_image = (
+                data.startswith(b"\\xff\\xd8\\xff")
+                or data.startswith(b"\\x89PNG\\r\\n\\x1a\\n")
+                or data[:6] in (b"GIF87a", b"GIF89a")
+                or (data[:4] == b"RIFF" and data[8:12] == b"WEBP")
+            )
+            if not valid_image:
+                raise ValueError("Choose a valid JPG, PNG, GIF, or WEBP group picture.")
+            if not CLOUDINARY_ENABLED:
+                raise ValueError("Group picture uploads are temporarily unavailable.")
+            avatar_url = upload_media_to_cloudinary(
+                io.BytesIO(data), resource_type="image", folder="funaab-one/groups"
+            )
+            if not avatar_url:
+                raise ValueError("The group picture could not be uploaded. Please try again.")
+        conversation.title = title
+        conversation.group_description = description or None
+        conversation.group_rules = rules or None
+        conversation.group_avatar_url = avatar_url
+        db.session.commit()
+        flash("Group details updated.", "success")
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), "error")
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Customizing group chat failed")
+        flash("Could not update group details. Please try again.", "error")
+    return redirect(url_for("conversation_view", conversation_id=conversation.id))
 
 
 @app.route("/messages/<int:conversation_id>/members/add", methods=["POST"])
