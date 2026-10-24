@@ -2342,9 +2342,14 @@ def conversation_view(conversation_id):
         audio_file = request.files.get("audio")
         image_url = None
         audio_url = None
+        is_ajax_message = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         if len(body) > 2000:
+            if is_ajax_message:
+                return {"ok": False, "error": "Messages must be 2,000 characters or fewer."}, 400
             flash("Messages must be 2,000 characters or fewer.", "error")
         elif not body and not ((image_file and image_file.filename) or (audio_file and audio_file.filename)):
+            if is_ajax_message:
+                return {"ok": False, "error": "Write a message or attach an image or voice note first."}, 400
             flash("Write a message or attach an image or voice note first.", "error")
         else:
             try:
@@ -2402,13 +2407,19 @@ def conversation_view(conversation_id):
                         create_notification(member.user_id, current_user.id, "message", "conversation",
                                             conversation_id=conversation.id)
                 db.session.commit()
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return {"ok": True, "message": "Message sent."}
                 return redirect(url_for("conversation_view", conversation_id=conversation.id))
             except ValueError as exc:
                 db.session.rollback()
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return {"ok": False, "error": str(exc)}, 400
                 flash(str(exc), "error")
             except Exception:
                 db.session.rollback()
                 app.logger.exception("Sending message or uploading chat image failed")
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return {"ok": False, "error": "Could not send your message. Please try again."}, 500
                 flash("Could not send your message. Please try again.", "error")
     membership.last_read_at = utcnow()
     db.session.commit()
@@ -2872,11 +2883,17 @@ def toggle_bookmark(post_id):
             db.session.add(Bookmark(post_id=post_id, user_id=current_user.id))
             flash("Post saved to your private bookmarks.", "success")
         db.session.commit()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return {"ok": True, "saved": existing is None, "post_id": post_id}
     except IntegrityError:
         db.session.rollback()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return {"ok": False, "error": "Bookmark state changed. Please try again."}, 409
     except SQLAlchemyError:
         db.session.rollback()
         app.logger.exception("Bookmark action failed")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return {"ok": False, "error": "Could not update your bookmark. Please try again."}, 500
         flash("Could not update your bookmark. Please try again.", "error")
 
     target = request.form.get("next")
@@ -3103,15 +3120,18 @@ def add_comment(post_id):
 
     body = request.form.get("body", "").strip()
 
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if not body:
+        if is_ajax:
+            return {"ok": False, "error": "Write a comment first."}, 400
         flash("Write a comment first.", "error")
         return dashboard_redirect()
 
     if len(body) > MAX_COMMENT_LENGTH:
-        flash(
-            f"Comments must be {MAX_COMMENT_LENGTH} characters or fewer.",
-            "error",
-        )
+        message = f"Comments must be {MAX_COMMENT_LENGTH} characters or fewer."
+        if is_ajax:
+            return {"ok": False, "error": message}, 400
+        flash(message, "error")
         return dashboard_redirect()
 
     try:
@@ -3124,11 +3144,21 @@ def add_comment(post_id):
         db.session.add(comment)
         create_notification(post.user_id, current_user.id, "comment", "post", post.id)
         db.session.commit()
+        if is_ajax:
+            return {
+                "ok": True, "post_id": post.id, "comment_id": comment.id,
+                "body": comment.body, "author_name": current_user.full_name or current_user.username,
+                "username": current_user.username, "profile_picture": current_user.profile_picture,
+                "created_at": comment.created_at.strftime("just now"),
+                "comment_count": db.session.scalar(select(db.func.count()).select_from(Comment).where(Comment.post_id == post.id)) or 0,
+            }
         flash("Comment added.", "success")
 
     except SQLAlchemyError:
         db.session.rollback()
         app.logger.exception("Adding comment failed")
+        if is_ajax:
+            return {"ok": False, "error": "Could not add your comment. Please try again."}, 500
         flash("Could not add your comment. Please try again.", "error")
 
     return dashboard_redirect()
@@ -3504,7 +3534,10 @@ def repost_post(post_id):
         )
     )
 
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if existing:
+        if is_ajax:
+            return {"ok": True, "reposted": True, "already_reposted": True, "post_id": post_id}
         flash("You have already reposted this post.", "info")
         return dashboard_redirect()
 
@@ -3517,15 +3550,22 @@ def repost_post(post_id):
         )
 
         db.session.commit()
+        if is_ajax:
+            repost_count = db.session.scalar(select(db.func.count()).select_from(Repost).where(Repost.post_id == post_id)) or 0
+            return {"ok": True, "reposted": True, "already_reposted": False, "post_id": post_id, "repost_count": repost_count}
         flash("Post reposted.", "success")
 
     except IntegrityError:
         db.session.rollback()
+        if is_ajax:
+            return {"ok": True, "reposted": True, "already_reposted": True, "post_id": post_id}
         flash("You have already reposted this post.", "info")
 
     except SQLAlchemyError:
         db.session.rollback()
         app.logger.exception("Reposting failed")
+        if is_ajax:
+            return {"ok": False, "error": "Could not repost this post. Please try again."}, 500
         flash("Could not repost this post. Please try again.", "error")
 
     return dashboard_redirect()
