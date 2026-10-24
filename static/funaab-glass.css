@@ -1,0 +1,56 @@
+
+/* FUNAAB ONE emerald glass design system — progressive enhancement */
+:root {
+  --fo-glass: rgba(10, 35, 25, .76);
+  --fo-glass-border: rgba(107, 255, 181, .15);
+  --fo-glow: rgba(46, 229, 157, .13);
+}
+html { scroll-behavior:smooth; }
+body {
+  background-image:
+    radial-gradient(ellipse at 78% -12%, rgba(16,185,129,.105), transparent 38%),
+    radial-gradient(ellipse at 3% 48%, rgba(5,150,105,.055), transparent 30%);
+  background-attachment: fixed;
+}
+button, a, input, textarea, select { -webkit-tap-highlight-color:transparent; }
+button, input, textarea, select { max-width:100%; }
+button, .btn, a.btn {
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+button:hover, .btn:hover, a.btn:hover { border-color:rgba(73,240,169,.42); }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline:2px solid rgba(46,229,157,.76);
+  outline-offset:2px;
+}
+.card, .panel, .post-card, .profile-card, .settings-card, .community-card, .conversation-card,
+.message-card, .event-card, .marketplace-card, .notification-card {
+  border-color:var(--fo-glass-border);
+  box-shadow:0 16px 40px rgba(0,0,0,.13), inset 0 1px rgba(255,255,255,.025);
+}
+@supports ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
+  .card, .panel, .profile-card, .settings-card, .community-card, .event-card,
+  .notification-card, .conversation-card {
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+  }
+}
+img, video, iframe { max-width:100%; }
+textarea, input, select { min-width:0; }
+pre, code { overflow-wrap:anywhere; }
+table { max-width:100%; }
+@media (max-width: 760px) {
+  html { -webkit-text-size-adjust:100%; }
+  body { background-attachment:scroll; }
+  .content, main, .page-content, .container, .wrap { max-width:100%; }
+  img, video { height:auto; }
+  .card, .panel, .post-card, .profile-card, .settings-card, .community-card { border-radius:16px; }
+  button, .btn, a.btn { touch-action:manipulation; }
+}
+@media (max-width: 480px) {
+  .content, .page-content, .container, .wrap { padding-left:12px; padding-right:12px; }
+  h1 { overflow-wrap:anywhere; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior:auto; }
+  *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
