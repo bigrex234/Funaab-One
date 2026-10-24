@@ -661,6 +661,18 @@
             font-size: 11px; font-weight: 800; line-height: 1;
         }
         .nav a.messages-nav { display: flex; align-items: center; gap: 8px; }
+        .composer-mode-row { display:flex; gap:8px; margin: 0 0 10px; flex-wrap:wrap; }
+        .poll-editor { display:none; margin-top:12px; padding:14px; border:1px solid var(--border, #243b31); border-radius:14px; }
+        .poll-editor.active { display:block; }
+        .poll-options-editor { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+        .poll-options-editor input, .poll-deadline { width:100%; min-width:0; padding:10px 12px; border:1px solid var(--border, #243b31); border-radius:10px; background:var(--input-bg, #081a14); color:inherit; }
+        .poll-card { margin:12px 0; padding:14px; border:1px solid var(--border, #243b31); border-radius:14px; background:rgba(16,185,129,.035); }
+        .poll-choice { display:block; width:100%; text-align:left; padding:11px 12px; border:1px solid var(--border, #294338); border-radius:10px; background:transparent; color:inherit; margin:8px 0; cursor:pointer; }
+        .poll-choice:hover { border-color:#10b981; }
+        .poll-result-track { height:7px; margin-top:8px; border-radius:999px; background:rgba(128,150,138,.2); overflow:hidden; }
+        .poll-result-fill { height:100%; background:#10b981; border-radius:999px; }
+        .poll-meta { color:var(--muted, #9aafa4); font-size:.82rem; margin-top:10px; }
+        @media(max-width:600px) { .poll-options-editor { grid-template-columns:1fr; } }
     </style>
 </head>
 
@@ -754,11 +766,30 @@
                         <input type="hidden" name="csrf_token"
                                value="{{ csrf_token() }}">
 
+                        <div class="composer-mode-row">
+                            <button type="button" class="btn" id="standardModeBtn" aria-pressed="true">✎ Post</button>
+                            <button type="button" class="btn" id="pollModeBtn" aria-pressed="false">▤ Create poll</button>
+                        </div>
+                        <input type="hidden" name="post_type" id="postType" value="standard">
                         <textarea id="postBody" name="body" maxlength="280"
                                   placeholder="What's happening on campus, {{ student.full_name.split()[0] }}?"
                                   required></textarea>
+                        <div class="poll-editor" id="pollEditor">
+                            <strong>Poll options</strong>
+                            <div class="poll-options-editor">
+                                <input name="poll_option" maxlength="120" placeholder="Option 1" disabled>
+                                <input name="poll_option" maxlength="120" placeholder="Option 2" disabled>
+                                <input name="poll_option" maxlength="120" placeholder="Option 3 (optional)" disabled>
+                                <input name="poll_option" maxlength="120" placeholder="Option 4 (optional)" disabled>
+                                <input name="poll_option" maxlength="120" placeholder="Option 5 (optional)" disabled>
+                                <input name="poll_option" maxlength="120" placeholder="Option 6 (optional)" disabled>
+                            </div>
+                            <label class="poll-meta" for="pollClosesAt">Close voting (optional)</label>
+                            <input class="poll-deadline" type="datetime-local" name="poll_closes_at" id="pollClosesAt" disabled>
+                            <p class="poll-meta">Students can vote once and change their vote until the poll closes.</p>
+                        </div>
 
-                        <div class="composer-foot">
+                        <div class="composer-foot" id="composerFoot">
                             <div class="composer-media-tools">
                                 <input type="file" id="mediaInput" name="media" hidden
                                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-m4v,video/x-matroska">
@@ -843,6 +874,35 @@
 
                                 {% if post.body %}
                                     <p class="post-text">{{ post.body }}</p>
+                                {% endif %}
+
+                                {% if post.poll %}
+                                    {% set ns = namespace(total=0, my_vote=None) %}
+                                    {% for option in post.poll.options %}
+                                        {% set ns.total = ns.total + (option.votes|length) %}
+                                        {% for ballot in option.votes %}
+                                            {% if ballot.user_id == student.id %}{% set ns.my_vote = option.id %}{% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% set poll_closed = post.poll.closes_at and post.poll.closes_at <= now %}
+                                    <div class="poll-card">
+                                        <strong>📊 Poll</strong>
+                                        <form method="POST" action="{{ url_for('vote_poll', poll_id=post.poll.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            {% for option in post.poll.options %}
+                                                {% set option_votes = option.votes|length %}
+                                                {% set percent = ((option_votes * 100 / ns.total)|round|int) if ns.total else 0 %}
+                                                <button class="poll-choice" type="submit" name="option_id" value="{{ option.id }}" {% if poll_closed %}disabled{% endif %}>
+                                                    <span>{{ '✓ ' if ns.my_vote == option.id else '' }}{{ option.text }}</span>
+                                                    {% if ns.my_vote is not none or poll_closed %}
+                                                        <span class="poll-meta">{{ option_votes }} vote{{ '' if option_votes == 1 else 's' }} · {{ percent }}%</span>
+                                                        <div class="poll-result-track"><div class="poll-result-fill" style="width:{{ percent }}%"></div></div>
+                                                    {% endif %}
+                                                </button>
+                                            {% endfor %}
+                                        </form>
+                                        <div class="poll-meta">{{ ns.total }} vote{{ '' if ns.total == 1 else 's' }} · {% if poll_closed %}Voting closed{% elif post.poll.closes_at %}Closes {{ post.poll.closes_at.strftime('%b %d, %H:%M') }}{% else %}Open poll{% endif %}{% if ns.my_vote is not none and not poll_closed %} · You can change your vote{% endif %}</div>
+                                    </div>
                                 {% endif %}
 
                                 {% if post.media_url and (post.media_url.startswith('/static/uploads/') or post.media_url.startswith('https://res.cloudinary.com/')) %}
@@ -1126,6 +1186,29 @@
     const uploadedMediaType = document.getElementById("uploadedMediaType");
     const uploadStatus = document.getElementById("uploadStatus");
     let uploadingPostMedia = false;
+    const postType = document.getElementById("postType");
+    const pollEditor = document.getElementById("pollEditor");
+    const pollModeBtn = document.getElementById("pollModeBtn");
+    const standardModeBtn = document.getElementById("standardModeBtn");
+    const pollInputs = [...pollEditor.querySelectorAll('input[name="poll_option"]')];
+    const pollClosesAt = document.getElementById("pollClosesAt");
+
+    function setComposerMode(mode) {
+        const isPoll = mode === "poll";
+        postType.value = isPoll ? "poll" : "standard";
+        pollEditor.classList.toggle("active", isPoll);
+        pollInputs.forEach(input => { input.disabled = !isPoll; });
+        pollClosesAt.disabled = !isPoll;
+        mediaInput.disabled = isPoll;
+        attachBtn.disabled = isPoll;
+        if (isPoll && (mediaInput.files.length || uploadedMediaUrl.value)) removeMediaBtn.click();
+        standardModeBtn.setAttribute("aria-pressed", String(!isPoll));
+        pollModeBtn.setAttribute("aria-pressed", String(isPoll));
+        postBody.placeholder = isPoll ? "Ask a question for your poll…" : "What's happening on campus, {{ student.full_name.split()[0] }}?";
+        updatePostCounter();
+    }
+    standardModeBtn.addEventListener("click", () => setComposerMode("standard"));
+    pollModeBtn.addEventListener("click", () => setComposerMode("poll"));
 
     function updatePostCounter() {
         const length = postBody.value.length;
@@ -1217,6 +1300,13 @@
         if ((!postBody.value.trim() && !mediaInput.files.length && !uploadedMediaUrl.value) || postBody.value.length > 280) {
             updatePostCounter();
             return;
+        }
+        if (postType.value === "poll") {
+            const filled = pollInputs.map(input => input.value.trim()).filter(Boolean);
+            if (filled.length < 2 || new Set(filled.map(value => value.toLocaleLowerCase())).size < 2) {
+                uploadStatus.textContent = "Enter at least two different poll options.";
+                return;
+            }
         }
         const file = mediaInput.files[0];
         if (!file) {
