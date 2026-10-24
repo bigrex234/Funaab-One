@@ -1898,6 +1898,66 @@ def create_group_conversation():
         return redirect(url_for("messages_inbox"))
 
 
+
+@app.route("/messages/<int:conversation_id>/members/add", methods=["POST"])
+@login_required
+def add_group_members(conversation_id):
+    """Add existing students to a group chat without changing its history."""
+    conversation = db.session.get(Conversation, conversation_id)
+    if conversation is None:
+        abort(404)
+    if not conversation.is_group:
+        abort(400, description="Members can only be added to group chats.")
+    if _conversation_member(conversation_id) is None:
+        abort(403)
+    # The creator or a site administrator can add people to an existing group.
+    if conversation.creator_id != current_user.id and not current_user.is_admin:
+        abort(403, description="Only the group creator or an administrator can add members.")
+
+    raw_usernames = request.form.get("usernames", "")
+    usernames = list(dict.fromkeys(
+        item.strip().lstrip("@").lower()
+        for item in raw_usernames.replace("\n", ",").split(",")
+        if item.strip()
+    ))
+    if not usernames:
+        flash("Enter at least one student's username.", "error")
+        return redirect(url_for("conversation_view", conversation_id=conversation.id))
+    if len(usernames) > 50:
+        flash("You can add up to 50 students at a time.", "error")
+        return redirect(url_for("conversation_view", conversation_id=conversation.id))
+
+    users = db.session.scalars(select(User).where(User.username.in_(usernames))).all()
+    found = {user.username.lower(): user for user in users}
+    missing = [name for name in usernames if name not in found]
+    if missing:
+        flash("These usernames were not found: " + ", ".join("@" + name for name in missing), "error")
+        return redirect(url_for("conversation_view", conversation_id=conversation.id))
+
+    existing_ids = {member.user_id for member in conversation.members}
+    new_users = [found[name] for name in usernames if found[name].id not in existing_ids]
+    if not new_users:
+        flash("Those students are already in this group.", "info")
+        return redirect(url_for("conversation_view", conversation_id=conversation.id))
+    if len(existing_ids) + len(new_users) > 200:
+        flash("This group has reached its 200-member limit.", "error")
+        return redirect(url_for("conversation_view", conversation_id=conversation.id))
+
+    try:
+        for user in new_users:
+            db.session.add(ConversationMember(conversation_id=conversation.id, user_id=user.id))
+            create_notification(user.id, current_user.id, "message", "conversation",
+                                conversation_id=conversation.id)
+        db.session.commit()
+        added_names = ", ".join("@" + user.username for user in new_users)
+        flash(f"Added {added_names} to {conversation.title or 'the group'}.", "success")
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Adding members to group chat failed")
+        flash("Could not add members right now. Please try again.", "error")
+    return redirect(url_for("conversation_view", conversation_id=conversation.id))
+
+
 def _conversation_member(conversation_id):
     return db.session.scalar(select(ConversationMember).where(
         ConversationMember.conversation_id == conversation_id,
