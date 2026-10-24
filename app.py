@@ -6,7 +6,7 @@ import tempfile
 import uuid
 import io
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 from urllib.parse import urljoin, urlparse
 
@@ -397,6 +397,7 @@ class ConversationMember(db.Model):
     conversation_id = db.Column(db.Integer, db.ForeignKey("conversation.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     last_read_at = db.Column(db.DateTime, nullable=True)
+    typing_until = db.Column(db.DateTime, nullable=True)
     joined_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     conversation = db.relationship("Conversation", back_populates="members")
     user = db.relationship("User")
@@ -1979,13 +1980,19 @@ def conversation_view(conversation_id):
     membership.last_read_at = utcnow()
     db.session.commit()
     members = [m.user for m in conversation.members]
+    other_membership = next((m for m in conversation.members if m.user_id != current_user.id), None)
     if conversation.is_group:
         display_title = conversation.title or "Group chat"
     else:
-        other = next((u for u in members if u.id != current_user.id), None)
+        other = other_membership.user if other_membership else None
         display_title = other.full_name if other else "Conversation"
+    seen_message_id = 0
+    if other_membership and other_membership.last_read_at:
+        seen_message_id = max((m.id for m in conversation.messages
+                               if m.sender_id == current_user.id and m.created_at <= other_membership.last_read_at), default=0)
     return render_template("conversation.html", student=current_user, conversation=conversation,
-                           display_title=display_title, members=members)
+                           display_title=display_title, members=members,
+                           other_membership=other_membership, seen_message_id=seen_message_id)
 
 
 @app.route("/messages/<int:conversation_id>/<int:message_id>/delete", methods=["POST"])
@@ -2040,13 +2047,34 @@ def poll_messages(conversation_id):
             if membership.last_read_at is None or latest_read_time > membership.last_read_at:
                 membership.last_read_at = latest_read_time
                 db.session.commit()
+    other_membership = next((m for m in conversation.members if m.user_id != current_user.id), None)
+    other_typing = bool(other_membership and other_membership.typing_until and other_membership.typing_until > utcnow())
+    seen_message_id = 0
+    if other_membership and other_membership.last_read_at:
+        seen_message_id = db.session.scalar(select(db.func.max(Message.id)).where(
+            Message.conversation_id == conversation_id,
+            Message.sender_id == current_user.id,
+            Message.created_at <= other_membership.last_read_at,
+        )) or 0
     return {"messages": [{
         "id": m.id, "sender_id": m.sender_id, "sender_name": m.sender.full_name,
         "username": m.sender.username, "avatar": m.sender.profile_picture,
         "initial": (m.sender.full_name or m.sender.username)[:1].upper(),
         "body": m.body, "image_url": m.image_url, "created_at": m.created_at.strftime("%b %d, %H:%M"),
         "mine": m.sender_id == current_user.id,
-    } for m in rows]}
+    } for m in rows], "other_typing": other_typing, "seen_message_id": seen_message_id}
+
+
+@app.route("/messages/<int:conversation_id>/typing", methods=["POST"])
+@login_required
+def update_typing_status(conversation_id):
+    membership = _conversation_member(conversation_id)
+    if membership is None:
+        abort(403)
+    raw = request.form.get("typing", "0")
+    membership.typing_until = utcnow() + timedelta(seconds=5) if raw == "1" else None
+    db.session.commit()
+    return {"ok": True}
 
 
 # ==================================================
