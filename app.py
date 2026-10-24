@@ -1713,6 +1713,41 @@ def find_students():
     )
 
 
+@app.route("/search")
+@login_required
+def general_search():
+    query = request.args.get("q", "").strip()[:100]
+    hidden_user_ids = blocked_user_ids_for(current_user.id)
+    students = []
+    posts = []
+
+    if query:
+        escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"
+        user_statement = select(User).where(
+            User.id != current_user.id,
+            or_(User.username.ilike(pattern, escape="\\"),
+                User.full_name.ilike(pattern, escape="\\"),
+                User.department.ilike(pattern, escape="\\")),
+        )
+        if hidden_user_ids:
+            user_statement = user_statement.where(User.id.not_in(hidden_user_ids))
+        students = db.session.scalars(user_statement.order_by(User.username.asc()).limit(30)).all()
+
+        post_statement = select(Post).join(User, Post.user_id == User.id).where(
+            Post.body.ilike(pattern, escape="\\"),
+            User.id != current_user.id,
+        )
+        if hidden_user_ids:
+            post_statement = post_statement.where(User.id.not_in(hidden_user_ids))
+        posts = db.session.scalars(post_statement.order_by(Post.created_at.desc()).limit(50)).all()
+
+    return render_template(
+        "search.html", student=current_user, query=query,
+        students=students, posts=posts,
+    )
+
+
 @app.route("/u/<string:username>/follow", methods=["POST"])
 @login_required
 def toggle_follow(username):
