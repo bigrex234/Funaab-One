@@ -2238,11 +2238,16 @@ def create_post():
                 raise ValueError("Media uploads are not configured.")
             if uploaded_type not in {"image", "video"}:
                 raise ValueError("Unsupported media type.")
-            expected_prefix = f"post_{current_user.id}_"
+            # Cloudinary returns the public_id with its folder prefix
+            # (funaab-one/posts/...) when the upload uses the folder parameter.
+            # Validate both the expected folder and the current user's unique ID.
+            expected_prefix = f"funaab-one/posts/post_{current_user.id}_"
             if not uploaded_public_id.startswith(expected_prefix):
                 raise ValueError("This uploaded media is not valid for your account.")
             parsed_url = urlparse(uploaded_url)
-            if parsed_url.scheme != "https" or not parsed_url.hostname or not parsed_url.hostname.endswith("cloudinary.com"):
+            if (parsed_url.scheme != "https" or not parsed_url.hostname
+                    or not (parsed_url.hostname == "cloudinary.com"
+                            or parsed_url.hostname.endswith(".cloudinary.com"))):
                 raise ValueError("The media URL is not a valid Cloudinary URL.")
             try:
                 asset = cloudinary.api.resource(
@@ -2255,8 +2260,10 @@ def create_post():
                 raise ValueError("Cloudinary could not verify the uploaded media. Please try again.")
             verified_url = asset.get("secure_url")
             verified_public_id = asset.get("public_id", "")
-            if not verified_url or verified_public_id.split("/")[-1] != uploaded_public_id.split("/")[-1]:
+            if not verified_url or verified_public_id != uploaded_public_id:
                 raise ValueError("The uploaded media could not be verified.")
+            if not verified_public_id.startswith(expected_prefix):
+                raise ValueError("This uploaded media is not valid for your account.")
             media_url = verified_url
             media_type = uploaded_type
         elif has_media:
