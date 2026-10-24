@@ -1615,6 +1615,46 @@
         });
     }
 
+    async function publishPostAjax() {
+        const response = await fetch(postForm.action, {
+            method: "POST", body: new FormData(postForm), credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+        });
+        let result = {};
+        try { result = await response.json(); } catch (_) {}
+        if (!response.ok || !result.ok) throw new Error(result.error || "Could not publish. Please try again.");
+        const post = result.post;
+        const feed = document.querySelector(".feed-title")?.nextElementSibling;
+        if (feed && post) {
+            const article = document.createElement("article");
+            article.className = "post"; article.id = "post-" + post.id;
+            const author = document.createElement("strong"); author.textContent = {{ (student.full_name or student.username)|tojson }};
+            const time = document.createElement("small"); time.textContent = " · " + (post.created_at || "Just now");
+            const body = document.createElement("p"); body.textContent = post.body;
+            article.append(author, time, body);
+            if (post.type === "poll" && Array.isArray(post.options)) {
+                const options = document.createElement("div"); options.className = "poll-options";
+                post.options.forEach(option => { const item = document.createElement("div"); item.className = "poll-option"; item.textContent = option.text; options.appendChild(item); });
+                article.appendChild(options);
+            }
+            if (post.media_url) {
+                const media = post.media_type === "video" ? document.createElement("video") : document.createElement("img");
+                media.src = post.media_url; media.style.maxWidth = "100%"; media.style.borderRadius = "12px";
+                if (media.tagName === "VIDEO") { media.controls = true; media.playsInline = true; }
+                article.appendChild(media);
+            }
+            feed.prepend(article);
+        }
+        postBody.value = ""; mediaInput.value = ""; uploadedMediaUrl.value = ""; uploadedMediaPublicId.value = ""; uploadedMediaType.value = "";
+        const mediaName = document.getElementById("mediaName"); if (mediaName) mediaName.textContent = "";
+        uploadStatus.textContent = post.type === "poll" ? "Poll published!" : "Post published!";
+        postForm.dataset.readyToPublish = ""; postBtn.textContent = "Post"; uploadingPostMedia = false;
+        updatePostCounter();
+        if (postType.value === "poll") {
+            pollInputs.forEach(input => { input.value = ""; });
+        }
+    }
+
     postForm.addEventListener("submit", async event => {
         if (postForm.dataset.readyToPublish === "true") return;
         event.preventDefault();
@@ -1633,8 +1673,9 @@
         if (!file) {
             postBtn.disabled = true;
             postBtn.textContent = "Publishing...";
-            postForm.dataset.readyToPublish = "true";
-            postForm.submit();
+            try { await publishPostAjax(); }
+            catch (error) { uploadStatus.textContent = error.message || "Could not publish. Please try again."; }
+            finally { postBtn.disabled = false; postBtn.textContent = "Post"; updatePostCounter(); }
             return;
         }
         uploadingPostMedia = true;
@@ -1652,8 +1693,7 @@
             mediaInput.value = "";
             uploadStatus.textContent = "Upload complete. Publishing post…";
             postBtn.textContent = "Publishing...";
-            postForm.dataset.readyToPublish = "true";
-            postForm.submit();
+            await publishPostAjax();
         } catch (error) {
             uploadStatus.textContent = error.message || "Upload failed. Please try again.";
             postBtn.textContent = "Post";
