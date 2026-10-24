@@ -50,6 +50,8 @@ elif _database_url.startswith("postgresql://"):
     _database_url = "postgresql+psycopg://" + _database_url[len("postgresql://"):]
 app.config["SQLALCHEMY_DATABASE_URI"] = _database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Drop dead connections instead of crashing on the first request after idle (serverless + pooler).
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 # Vercel functions have a small request-body limit. Larger media must use direct-to-Cloudinary uploads.
 app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_CONTENT_LENGTH", str(4 * 1024 * 1024))) if os.environ.get("VERCEL") else int(os.environ.get("MAX_CONTENT_LENGTH", str(1024 * 1024 * 1024)))
 UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "/tmp/funaab_one_uploads" if os.environ.get("VERCEL") else str(Path(app.static_folder) / "uploads")))
@@ -77,7 +79,8 @@ VIDEO_EXTENSIONS = {".mp4", ".mov", ".m4v", ".webm", ".mkv"}
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-if os.environ.get("FLASK_HTTPS_ONLY") == "1":
+if os.environ.get("FLASK_HTTPS_ONLY") == "1" or os.environ.get("VERCEL"):
+    # Vercel is always HTTPS, so the secure flag is safe there.
     app.config["SESSION_COOKIE_SECURE"] = True
 
 db = SQLAlchemy(app)
@@ -719,6 +722,36 @@ def handle_csrf_error(error):
         return redirect(request.referrer)
 
     return redirect(url_for("home"))
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return response
+
+
+def _error_response(code, title, message):
+    if request.path.endswith("/poll"):
+        return {"error": title}, code
+    return render_template("error.html", code=code, title=title, message=message), code
+
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return _error_response(403, "Access denied", getattr(error, "description", None) or "You don't have permission to view this page.")
+
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return _error_response(404, "Page not found", "That page doesn't exist or may have been removed.")
+
+
+@app.errorhandler(500)
+def server_error(error):
+    db.session.rollback()
+    return _error_response(500, "Something went wrong", "We hit a problem on our side. Please try again in a moment.")
 
 
 def validate_registration(data):
@@ -1753,20 +1786,20 @@ def mark_all_notifications_read():
 # ==================================================
 
 def count_unread_messages(user_id):
-    """Count incoming messages newer than each conversation's last-read time."""
-    memberships = db.session.scalars(
-        select(ConversationMember).where(ConversationMember.user_id == user_id)
-    ).all()
-    unread = 0
-    for membership in memberships:
-        query = select(db.func.count(Message.id)).where(
-            Message.conversation_id == membership.conversation_id,
+    """Count incoming messages newer than each conversation's last-read time (one query)."""
+    query = (
+        select(db.func.count(Message.id))
+        .join(ConversationMember, ConversationMember.conversation_id == Message.conversation_id)
+        .where(
+            ConversationMember.user_id == user_id,
             Message.sender_id != user_id,
+            or_(
+                ConversationMember.last_read_at.is_(None),
+                Message.created_at > ConversationMember.last_read_at,
+            ),
         )
-        if membership.last_read_at is not None:
-            query = query.where(Message.created_at > membership.last_read_at)
-        unread += db.session.scalar(query) or 0
-    return unread
+    )
+    return db.session.scalar(query) or 0
 
 
 @app.context_processor
