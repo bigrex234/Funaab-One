@@ -1491,14 +1491,15 @@ def story_upload_signature():
         return {"error": "Choose a photo or video."}, 400
     timestamp = int(datetime.now(timezone.utc).timestamp())
     public_id = f"story_{current_user.id}_{uuid.uuid4().hex}"
+    # Sign only the parameters sent by the browser to Cloudinary.
     params = {
         "timestamp": timestamp,
         "folder": "funaab-one/stories",
         "public_id": public_id,
-        "overwrite": "false",
-        "unique_filename": "false",
     }
-    signature = cloudinary.utils.api_sign_request(params, CLOUDINARY_API_SECRET)
+    signature = cloudinary.utils.api_sign_request(
+        params, CLOUDINARY_API_SECRET
+    )
     return {
         "cloud_name": CLOUDINARY_CLOUD_NAME,
         "api_key": CLOUDINARY_API_KEY,
