@@ -409,9 +409,23 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     body = db.Column(db.String(2000), nullable=False, default="")
     image_url = db.Column(db.String(500), nullable=True)
+    reply_to_message_id = db.Column(db.Integer, db.ForeignKey("message.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
     conversation = db.relationship("Conversation", back_populates="messages")
     sender = db.relationship("User")
+    reply_to = db.relationship("Message", remote_side=[id], foreign_keys=[reply_to_message_id], uselist=False)
+    reactions = db.relationship("MessageReaction", back_populates="message", cascade="all, delete-orphan", passive_deletes=True)
+
+
+class MessageReaction(db.Model):
+    __table_args__ = (db.UniqueConstraint("message_id", "user_id", name="unique_message_reaction_user"),)
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, db.ForeignKey("message.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    emoji = db.Column(db.String(8), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    message = db.relationship("Message", back_populates="reactions")
+    user = db.relationship("User")
 
 
 class Comment(db.Model):
@@ -1963,7 +1977,18 @@ def conversation_view(conversation_id):
                     image_url = upload_media_to_cloudinary(io.BytesIO(data), resource_type="image", folder="funaab-one/messages")
                     if not image_url:
                         raise ValueError("The image could not be uploaded. Please try again.")
-                db.session.add(Message(conversation_id=conversation.id, sender_id=current_user.id, body=body, image_url=image_url))
+                reply_to_raw = request.form.get("reply_to_message_id", "").strip()
+                reply_to_message = None
+                if reply_to_raw:
+                    try:
+                        reply_to_id = int(reply_to_raw)
+                    except ValueError:
+                        raise ValueError("That reply target is invalid. Please try again.")
+                    reply_to_message = db.session.get(Message, reply_to_id)
+                    if reply_to_message is None or reply_to_message.conversation_id != conversation.id:
+                        raise ValueError("That message can no longer be replied to.")
+                db.session.add(Message(conversation_id=conversation.id, sender_id=current_user.id, body=body,
+                                       image_url=image_url, reply_to_message_id=reply_to_message.id if reply_to_message else None))
                 for member in conversation.members:
                     if member.user_id != current_user.id:
                         create_notification(member.user_id, current_user.id, "message", "conversation",
@@ -1990,9 +2015,13 @@ def conversation_view(conversation_id):
     if other_membership and other_membership.last_read_at:
         seen_message_id = max((m.id for m in conversation.messages
                                if m.sender_id == current_user.id and m.created_at <= other_membership.last_read_at), default=0)
+    reaction_summaries = {}
+    for message in conversation.messages:
+        reaction_summaries[message.id] = _message_reaction_summary(message.id, current_user.id)
     return render_template("conversation.html", student=current_user, conversation=conversation,
                            display_title=display_title, members=members,
-                           other_membership=other_membership, seen_message_id=seen_message_id)
+                           other_membership=other_membership, seen_message_id=seen_message_id,
+                           reaction_summaries=reaction_summaries)
 
 
 @app.route("/messages/<int:conversation_id>/<int:message_id>/delete", methods=["POST"])
@@ -2017,6 +2046,46 @@ def delete_message(conversation_id, message_id):
         app.logger.exception("Deleting message failed")
         flash("Could not delete the message. Please try again.", "error")
     return redirect(url_for("conversation_view", conversation_id=conversation_id))
+
+
+@app.route("/messages/<int:conversation_id>/<int:message_id>/react", methods=["POST"])
+@login_required
+def react_to_message(conversation_id, message_id):
+    if _conversation_member(conversation_id) is None:
+        abort(403)
+    message = db.session.get(Message, message_id)
+    if message is None or message.conversation_id != conversation_id:
+        abort(404)
+    allowed = {"❤️", "😂", "👍", "🔥", "😮"}
+    emoji = request.form.get("emoji", "").strip()
+    if emoji not in allowed:
+        abort(400, description="Unsupported reaction.")
+    existing = db.session.scalar(select(MessageReaction).where(
+        MessageReaction.message_id == message_id, MessageReaction.user_id == current_user.id
+    ))
+    try:
+        if existing and existing.emoji == emoji:
+            db.session.delete(existing)
+        elif existing:
+            existing.emoji = emoji
+        else:
+            db.session.add(MessageReaction(message_id=message_id, user_id=current_user.id, emoji=emoji))
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Toggling message reaction failed")
+        return {"ok": False, "error": "Could not save reaction."}, 500
+    return {"ok": True, "message_id": message_id, "reactions": _message_reaction_summary(message_id, current_user.id)}
+
+
+def _message_reaction_summary(message_id, user_id):
+    rows = db.session.execute(select(MessageReaction.emoji, db.func.count(MessageReaction.id))
+                              .where(MessageReaction.message_id == message_id)
+                              .group_by(MessageReaction.emoji)).all()
+    # Return one count per emoji and whether the current user selected it.
+    user_emojis = set(db.session.scalars(select(MessageReaction.emoji).where(
+        MessageReaction.message_id == message_id, MessageReaction.user_id == user_id)).all())
+    return [{"emoji": emoji, "count": int(count), "mine": emoji in user_emojis} for emoji, count in rows]
 
 
 @app.route("/messages/<int:conversation_id>/poll")
@@ -2056,13 +2125,23 @@ def poll_messages(conversation_id):
             Message.sender_id == current_user.id,
             Message.created_at <= other_membership.last_read_at,
         )) or 0
+    recent_messages = db.session.scalars(select(Message).where(
+        Message.conversation_id == conversation_id
+    ).order_by(Message.id.desc()).limit(100)).all()
     return {"messages": [{
         "id": m.id, "sender_id": m.sender_id, "sender_name": m.sender.full_name,
         "username": m.sender.username, "avatar": m.sender.profile_picture,
         "initial": (m.sender.full_name or m.sender.username)[:1].upper(),
         "body": m.body, "image_url": m.image_url, "created_at": m.created_at.strftime("%b %d, %H:%M"),
+        "reply_to": ({"id": m.reply_to.id, "sender_name": m.reply_to.sender.full_name,
+                      "body": m.reply_to.body or ("📷 Image" if m.reply_to.image_url else "Message")}
+                     if m.reply_to and m.reply_to.conversation_id == conversation_id else None),
+        "reactions": _message_reaction_summary(m.id, current_user.id),
         "mine": m.sender_id == current_user.id,
-    } for m in rows], "other_typing": other_typing, "seen_message_id": seen_message_id}
+    } for m in rows],
+        "reaction_updates": [{"message_id": m.id, "reactions": _message_reaction_summary(m.id, current_user.id)}
+                            for m in reversed(recent_messages)],
+        "other_typing": other_typing, "seen_message_id": seen_message_id}
 
 
 @app.route("/messages/<int:conversation_id>/typing", methods=["POST"])
