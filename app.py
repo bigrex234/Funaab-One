@@ -2678,6 +2678,13 @@ def post_upload_signature():
 @app.route("/post", methods=["POST"])
 @login_required
 def create_post():
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
+    def post_error(message, status=400):
+        if is_ajax:
+            return {"ok": False, "error": message}, status
+        flash(message, "error")
+        return redirect(url_for("dashboard"))
+
     body = request.form.get("body", "").replace("\\r\\n", "\\n").strip()
     media = request.files.get("media")
     has_media = bool(media and media.filename)
@@ -2697,14 +2704,11 @@ def create_post():
                 options.append(value)
                 seen.add(value.casefold())
         if not body:
-            flash("Enter a question for your poll.", "error")
-            return redirect(url_for("dashboard"))
+            return post_error("Enter a question for your poll.")
         if len(body) > MAX_POST_LENGTH:
-            flash(f"Poll questions can be at most {MAX_POST_LENGTH} characters.", "error")
-            return redirect(url_for("dashboard"))
+            return post_error(f"Poll questions can be at most {MAX_POST_LENGTH} characters.")
         if not 2 <= len(options) <= 6:
-            flash("A poll needs 2–6 different answer options.", "error")
-            return redirect(url_for("dashboard"))
+            return post_error("A poll needs 2–6 different answer options.")
         closes_at = None
         closes_value = request.form.get("poll_closes_at", "").strip()
         if closes_value:
@@ -2713,8 +2717,7 @@ def create_post():
                 if closes_at <= datetime.now():
                     raise ValueError
             except ValueError:
-                flash("Choose a valid poll closing time in the future.", "error")
-                return redirect(url_for("dashboard"))
+                return post_error("Choose a valid poll closing time in the future.")
         try:
             post = Post(body=body, user_id=current_user.id)
             poll = Poll(closes_at=closes_at, allow_vote_change=True)
@@ -2722,22 +2725,23 @@ def create_post():
             post.poll = poll
             db.session.add(post)
             db.session.commit()
+            if is_ajax:
+                return {"ok": True, "post": {"id": post.id, "body": post.body, "type": "poll", "created_at": post.created_at.strftime("%b %d, %H:%M"), "options": [{"id": option.id, "text": option.text} for option in post.poll.options]}}
             flash("Poll published!", "success")
         except Exception:
             db.session.rollback()
             app.logger.exception("Poll creation failed")
+            if is_ajax:
+                return {"ok": False, "error": "Could not publish the poll. Please try again."}, 500
             flash("Could not publish the poll. Please try again.", "error")
         return redirect(url_for("dashboard"))
 
     if len(body) > MAX_POST_LENGTH:
-        flash(f"Posts can be at most {MAX_POST_LENGTH} characters.", "error")
-        return redirect(url_for("dashboard"))
+        return post_error(f"Posts can be at most {MAX_POST_LENGTH} characters.")
     if not body and not has_media and not has_direct_media:
-        flash("Write something or attach a photo or video.", "error")
-        return redirect(url_for("dashboard"))
+        return post_error("Write something or attach a photo or video.")
     if has_media and has_direct_media:
-        flash("Please select only one photo or video.", "error")
-        return redirect(url_for("dashboard"))
+        return post_error("Please select only one photo or video.")
 
     final_path = None
     try:
@@ -2782,8 +2786,7 @@ def create_post():
             # Backward-compatible local upload path for small media on local development.
             extension = Path(media.filename).suffix.lower()
             if extension not in IMAGE_EXTENSIONS | VIDEO_EXTENSIONS:
-                flash("Unsupported file type. Choose a photo or video.", "error")
-                return redirect(url_for("dashboard"))
+                return post_error("Unsupported file type. Choose a photo or video.")
             with tempfile.TemporaryDirectory(prefix="funaab_upload_") as workdir:
                 temp = Path(workdir) / ("incoming" + extension)
                 media.save(temp)
@@ -2819,17 +2822,19 @@ def create_post():
             else:
                 media_url = url_for("static", filename="uploads/" + final_path.name)
 
-        db.session.add(Post(
-            body=body, user_id=current_user.id,
-            media_url=media_url, media_type=media_type,
-        ))
+        post = Post(body=body, user_id=current_user.id, media_url=media_url, media_type=media_type)
+        db.session.add(post)
         db.session.commit()
+        if is_ajax:
+            return {"ok": True, "post": {"id": post.id, "body": post.body, "type": "standard", "media_url": post.media_url, "media_type": post.media_type, "created_at": post.created_at.strftime("%b %d, %H:%M")}} 
         flash("Post published!", "success")
     except (ValueError, RuntimeError) as exc:
         db.session.rollback()
         if final_path:
             final_path.unlink(missing_ok=True)
             final_path.with_suffix(".jpg").unlink(missing_ok=True)
+        if is_ajax:
+            return {"ok": False, "error": str(exc)}, 400
         flash(str(exc), "error")
     except Exception:
         db.session.rollback()
@@ -2837,6 +2842,8 @@ def create_post():
             final_path.unlink(missing_ok=True)
             final_path.with_suffix(".jpg").unlink(missing_ok=True)
         app.logger.exception("Post creation failed")
+        if is_ajax:
+            return {"ok": False, "error": "Could not publish the post. Please try again."}, 500
         flash("Could not publish the post. Please try again.", "error")
     return redirect(url_for("dashboard"))
 
