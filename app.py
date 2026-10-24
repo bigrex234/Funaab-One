@@ -21,6 +21,8 @@ from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import cloudinary
 import cloudinary.uploader
+import cloudinary.utils
+import cloudinary.api
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from sqlalchemy import delete, or_, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -2172,31 +2174,97 @@ def media_sign():
 # CREATE A POST
 # ==================================================
 
+@app.route("/api/posts/upload-signature", methods=["POST"])
+@login_required
+def post_upload_signature():
+    """Authorize a browser-to-Cloudinary upload without routing media through Vercel."""
+    if not CLOUDINARY_ENABLED:
+        return {"error": "Media uploads are not configured."}, 503
+    payload = request.get_json(silent=True) or {}
+    resource_type = payload.get("resource_type")
+    if resource_type not in {"image", "video"}:
+        return {"error": "Choose a photo or video."}, 400
+
+    timestamp = int(datetime.now(timezone.utc).timestamp())
+    public_id = f"post_{current_user.id}_{uuid.uuid4().hex}"
+    params = {
+        "timestamp": timestamp,
+        "folder": "funaab-one/posts",
+        "public_id": public_id,
+        "overwrite": "false",
+        "unique_filename": "false",
+    }
+    signature = cloudinary.utils.api_sign_request(params, CLOUDINARY_API_SECRET)
+    return {
+        "cloud_name": CLOUDINARY_CLOUD_NAME,
+        "api_key": CLOUDINARY_API_KEY,
+        "timestamp": timestamp,
+        "folder": params["folder"],
+        "public_id": public_id,
+        "signature": signature,
+        "resource_type": resource_type,
+    }
+
+
 @app.route("/post", methods=["POST"])
 @login_required
 def create_post():
-    body = request.form.get("body", "").replace("\r\n", "\n").strip()
+    body = request.form.get("body", "").replace("\\r\\n", "\\n").strip()
     media = request.files.get("media")
     has_media = bool(media and media.filename)
+    uploaded_url = request.form.get("uploaded_media_url", "").strip()
+    uploaded_public_id = request.form.get("uploaded_media_public_id", "").strip()
+    uploaded_type = request.form.get("uploaded_media_type", "").strip()
+    has_direct_media = bool(uploaded_url and uploaded_public_id and uploaded_type)
 
     if len(body) > MAX_POST_LENGTH:
         flash(f"Posts can be at most {MAX_POST_LENGTH} characters.", "error")
         return redirect(url_for("dashboard"))
-    if not body and not has_media:
+    if not body and not has_media and not has_direct_media:
         flash("Write something or attach a photo or video.", "error")
+        return redirect(url_for("dashboard"))
+    if has_media and has_direct_media:
+        flash("Please select only one photo or video.", "error")
         return redirect(url_for("dashboard"))
 
     final_path = None
     try:
         media_url = None
         media_type = None
-        if has_media:
+        if has_direct_media:
+            # Verify the uploaded asset with Cloudinary's authenticated API rather than
+            # trusting a URL supplied by the browser.
+            if not CLOUDINARY_ENABLED:
+                raise ValueError("Media uploads are not configured.")
+            if uploaded_type not in {"image", "video"}:
+                raise ValueError("Unsupported media type.")
+            expected_prefix = f"post_{current_user.id}_"
+            if not uploaded_public_id.startswith(expected_prefix):
+                raise ValueError("This uploaded media is not valid for your account.")
+            parsed_url = urlparse(uploaded_url)
+            if parsed_url.scheme != "https" or not parsed_url.hostname or not parsed_url.hostname.endswith("cloudinary.com"):
+                raise ValueError("The media URL is not a valid Cloudinary URL.")
+            try:
+                asset = cloudinary.api.resource(
+                    uploaded_public_id,
+                    resource_type=uploaded_type,
+                    type="upload",
+                )
+            except Exception as exc:
+                app.logger.warning("Could not verify uploaded post media: %s", exc)
+                raise ValueError("Cloudinary could not verify the uploaded media. Please try again.")
+            verified_url = asset.get("secure_url")
+            verified_public_id = asset.get("public_id", "")
+            if not verified_url or verified_public_id.split("/")[-1] != uploaded_public_id.split("/")[-1]:
+                raise ValueError("The uploaded media could not be verified.")
+            media_url = verified_url
+            media_type = uploaded_type
+        elif has_media:
+            # Backward-compatible local upload path for small media on local development.
             extension = Path(media.filename).suffix.lower()
             if extension not in IMAGE_EXTENSIONS | VIDEO_EXTENSIONS:
                 flash("Unsupported file type. Choose a photo or video.", "error")
                 return redirect(url_for("dashboard"))
-
-            # Keep unvalidated and uncompressed uploads outside public static files.
             with tempfile.TemporaryDirectory(prefix="funaab_upload_") as workdir:
                 temp = Path(workdir) / ("incoming" + extension)
                 media.save(temp)
@@ -2218,17 +2286,14 @@ def create_post():
                     validate_video(temp)
                     final_path = UPLOAD_DIR / (uuid.uuid4().hex + ".mp4")
                     convert_video(temp, final_path, size > COMPRESSION_THRESHOLD)
-                    # A poster lets the feed stay lightweight until the user presses play.
                     create_video_thumbnail(final_path)
                     media_type = "video"
-
             if CLOUDINARY_ENABLED:
                 media_url = upload_media_to_cloudinary(
                     str(final_path),
                     resource_type="video" if media_type == "video" else "image",
                     folder="funaab-one/posts",
                 )
-                # Cloudinary is the persistent media store in production.
                 final_path.unlink(missing_ok=True)
                 final_path.with_suffix(".jpg").unlink(missing_ok=True)
                 final_path = None
@@ -2241,7 +2306,6 @@ def create_post():
         ))
         db.session.commit()
         flash("Post published!", "success")
-
     except (ValueError, RuntimeError) as exc:
         db.session.rollback()
         if final_path:
@@ -2254,7 +2318,7 @@ def create_post():
             final_path.unlink(missing_ok=True)
             final_path.with_suffix(".jpg").unlink(missing_ok=True)
         app.logger.exception("Post creation failed")
-        flash("Could not publish the post. Check the server terminal.", "error")
+        flash("Could not publish the post. Please try again.", "error")
     return redirect(url_for("dashboard"))
 
 
