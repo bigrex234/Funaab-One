@@ -1088,13 +1088,13 @@
                                 {% endif %}
 
                                 <div class="post-stats">
-                                    <span>{{ post.likes|length }} likes</span>
+                                    <span class="like-count" data-like-count="{{ post.id }}">{{ post.likes|length }} likes</span>
                                     <span>{{ post.comments|length }} comments</span>
                                     <span>{{ post.reposts|length }} reposts</span>
                                 </div>
 
                                 <div class="post-buttons">
-                                    <form class="action-form" method="POST"
+                                    <form class="action-form like-form" method="POST"
                                           action="{{ url_for('toggle_like', post_id=post.id) }}">
                                         <input type="hidden" name="csrf_token"
                                                value="{{ csrf_token() }}">
@@ -1307,6 +1307,47 @@
     }
 
     setTheme(root.dataset.theme || "dark");
+
+    // Toggle likes in place; retain normal form behaviour if the request fails.
+    document.addEventListener("submit", async (event) => {
+        const form = event.target.closest("form.like-form");
+        if (!form) return;
+        event.preventDefault();
+        const button = form.querySelector('button[type="submit"]');
+        if (!button || button.disabled) return;
+        const originalText = button.textContent.trim();
+        button.disabled = true;
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                body: new FormData(form),
+                headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" },
+                credentials: "same-origin"
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) throw new Error(result.error || "Could not update like.");
+            button.classList.toggle("liked", result.liked);
+            button.textContent = result.liked ? "♥ Liked" : "♡ Like";
+            const count = document.querySelector(`[data-like-count="${result.post_id}"]`);
+            if (count) count.textContent = `${result.like_count} ${result.like_count === 1 ? "like" : "likes"}`;
+        } catch (error) {
+            // Keep the UI consistent if the server/network fails.
+            button.textContent = originalText;
+            const message = error && error.message ? error.message : "Please try again.";
+            let notice = form.querySelector(".like-error");
+            if (!notice) {
+                notice = document.createElement("span");
+                notice.className = "like-error";
+                notice.setAttribute("role", "status");
+                notice.style.cssText = "font-size:11px;color:var(--danger);align-self:center";
+                form.appendChild(notice);
+            }
+            notice.textContent = message;
+            window.setTimeout(() => notice.remove(), 3500);
+        } finally {
+            button.disabled = false;
+        }
+    });
 
     themeBtn.addEventListener("click", () => {
         const next = root.dataset.theme === "dark" ? "light" : "dark";
