@@ -2511,10 +2511,14 @@ def delete_message(conversation_id, message_id):
     try:
         db.session.delete(message)
         db.session.commit()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return {"ok": True, "message_id": message_id}
         flash("Message deleted.", "success")
     except SQLAlchemyError:
         db.session.rollback()
         app.logger.exception("Deleting message failed")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return {"ok": False, "error": "Could not delete the message. Please try again."}, 500
         flash("Could not delete the message. Please try again.", "error")
     return redirect(url_for("conversation_view", conversation_id=conversation_id))
 
