@@ -923,6 +923,9 @@
                                                     <span>{{ comment.created_at | timeago }}</span>
                                                 </div>
                                                 <div class="comment-text">{{ comment.body }}</div>
+                                                {% if comment.user_id == student.id or student.is_admin %}
+                                                    <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" onsubmit="return confirm('Delete this comment?')" style="margin-top:5px"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path }}"><button class="text-btn danger" type="submit">Delete comment</button></form>
+                                                {% endif %}
                                                 {% if comment.user_id != student.id %}
                                                     <details class="report">
                                                         <summary class="text-btn danger">Report comment</summary>
@@ -956,6 +959,9 @@
                                                     <div class="comment-content">
                                                         <div class="comment-meta">{{ comment.author.full_name }} <span>{{ comment.created_at|timeago }}</span></div>
                                                         <div class="comment-text">{{ comment.body }}</div>
+                                                {% if comment.user_id == student.id or student.is_admin %}
+                                                    <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" onsubmit="return confirm('Delete this comment?')" style="margin-top:5px"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path }}"><button class="text-btn danger" type="submit">Delete comment</button></form>
+                                                {% endif %}
                                                         {% if comment.user_id != student.id %}
                                                             <details class="report">
                                                                 <summary class="text-btn danger">Report comment</summary>
