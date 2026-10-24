@@ -673,7 +673,85 @@
         .poll-result-fill { height:100%; background:#10b981; border-radius:999px; }
         .poll-meta { color:var(--muted, #9aafa4); font-size:.82rem; margin-top:10px; }
         @media(max-width:600px) { .poll-options-editor { grid-template-columns:1fr; } }
+
+        /* Premium emerald glass + Campus Stories */
+        body { background-image: radial-gradient(ellipse at 72% 0%, rgba(16,185,129,.10), transparent 36%), radial-gradient(ellipse at 8% 42%, rgba(5,150,105,.07), transparent 32%); }
+        .card, .topbar, .sidebar { backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+        .card { background: linear-gradient(145deg, rgba(18,43,32,.90), rgba(8,25,19,.94)); border-color: rgba(130,255,197,.12); box-shadow: 0 16px 44px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.025); }
+        .topbar { background: rgba(8,24,18,.84); border-bottom-color: rgba(90,235,165,.12); }
+        .sidebar { background: rgba(7,25,18,.91); border-right-color: rgba(90,235,165,.12); }
+        .btn, textarea, input, select { transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 7px 20px rgba(16,185,129,.12); }
+        .glass-panel { background: linear-gradient(135deg, rgba(19,55,39,.76), rgba(7,25,19,.82)); border: 1px solid rgba(117,255,186,.16); box-shadow: 0 18px 48px rgba(0,0,0,.20), inset 0 1px rgba(255,255,255,.035); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+        .stories-panel { padding: 18px 18px 14px; margin-bottom: 20px; border-radius: 20px; overflow: hidden; }
+        .stories-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:15px; }
+        .stories-heading h2 { font: 700 16px "Space Grotesk",sans-serif; margin:0 0 4px; }
+        .stories-heading p { margin:0; color:var(--muted); font-size:11px; }
+        .stories-live-dot { display:inline-block; width:7px; height:7px; margin-left:5px; border-radius:50%; background:#2ee59d; box-shadow:0 0 12px #2ee59d; vertical-align:middle; }
+        .stories-rail { display:flex; gap:17px; align-items:flex-start; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:thin; scrollbar-color:rgba(46,229,157,.35) transparent; }
+        .story-bubble { flex:0 0 66px; display:flex; flex-direction:column; align-items:center; gap:7px; padding:0; border:0; background:transparent; color:var(--text); font-size:10px; font-weight:600; cursor:pointer; min-width:0; }
+        .story-bubble > span:last-child { width:74px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
+        .story-avatar-wrap { position:relative; display:grid; place-items:center; width:62px; height:62px; border-radius:50%; padding:3px; background:linear-gradient(135deg,#2ee59d,#0d7b54,#b4ffe0); box-shadow:0 0 0 2px rgba(46,229,157,.07),0 0 18px rgba(46,229,157,.13); }
+        .story-avatar-wrap img,.story-avatar-wrap > span { width:100%; height:100%; border-radius:50%; object-fit:cover; display:grid; place-items:center; background:#143528; border:3px solid #0b1a13; color:#b7ffdb; font-size:20px; }
+        .story-bubble.has-unseen .story-avatar-wrap { background:conic-gradient(#2ee59d,#d5ff63,#22d3ee,#a78bfa,#2ee59d); box-shadow:0 0 0 2px rgba(46,229,157,.20),0 0 23px rgba(46,229,157,.25); }
+        .story-create-bubble .story-avatar-wrap { background:rgba(46,229,157,.20); border:1px dashed rgba(46,229,157,.75); box-shadow:none; }
+        .own-story-avatar i { position:absolute; right:-1px; bottom:0; display:grid; place-items:center; width:23px; height:23px; border:2px solid #0b1a13; border-radius:50%; background:#2ee59d; color:#052016; font-size:18px; font-style:normal; }
+        .own-story-ring { background:linear-gradient(135deg,#2ee59d,#087d50); }
+        .stories-empty { color:var(--muted); font-size:12px; padding:18px 8px; }
+        .story-modal[hidden] { display:none !important; }
+        .story-modal { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:18px; }
+        .story-modal-backdrop { position:absolute; inset:0; background:rgba(0,8,5,.78); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+        .story-create-card { position:relative; z-index:1; width:min(100%,470px); max-height:90vh; overflow:auto; padding:27px; border-radius:24px; }
+        .story-create-card h2 { margin:7px 0; font:700 25px "Space Grotesk",sans-serif; }
+        .eyebrow { color:#66efb5; font-size:10px; font-weight:800; letter-spacing:.15em; }
+        .story-close { display:grid; place-items:center; width:36px; height:36px; border:1px solid rgba(255,255,255,.14); border-radius:50%; color:var(--text); background:rgba(255,255,255,.06); font-size:25px; line-height:1; cursor:pointer; }
+        .story-create-card > .story-close { position:absolute; right:16px; top:16px; }
+        .story-file-picker { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; min-height:135px; margin-top:18px; border:1px dashed rgba(80,241,169,.48); border-radius:17px; background:rgba(46,229,157,.045); cursor:pointer; text-align:center; }
+        .story-file-picker span { display:grid; place-items:center; width:37px; height:37px; border-radius:13px; background:rgba(46,229,157,.15); color:#62f4b5; font-size:25px; }
+        .story-file-picker small { color:var(--muted); font-size:11px; }
+        .story-caption-label { display:block; margin:15px 0 7px; font-size:12px; font-weight:700; }
+        #storyCaption { width:100%; min-height:43px; padding:10px 12px; color:var(--text); background:rgba(0,0,0,.18); border:1px solid var(--border); border-radius:12px; }
+        .story-upload-preview { margin-top:12px; max-height:200px; overflow:hidden; border-radius:13px; background:#06110c; }
+        .story-upload-preview img,.story-upload-preview video { display:block; width:100%; max-height:200px; object-fit:contain; }
+        .story-upload-status { margin-top:10px; color:var(--muted); font-size:11px; min-height:18px; }
+        .story-create-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:15px; }
+        .story-viewer { position:relative; z-index:1; display:flex; flex-direction:column; width:min(100%,430px); height:min(86vh,760px); min-height:420px; overflow:hidden; border-radius:25px; background:linear-gradient(145deg,rgba(9,31,22,.98),rgba(2,10,7,.98)); }
+        .story-progress-track { height:3px; margin:10px 10px 0; border-radius:10px; background:rgba(255,255,255,.20); overflow:hidden; }
+        #storyProgressBar { height:100%; width:0; background:#4df4ae; transition:width .2s linear; }
+        .story-viewer-header { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; gap:10px; }
+        .story-viewer-author { display:flex; align-items:center; gap:10px; min-width:0; }
+        .story-viewer-avatar { display:grid; place-items:center; width:37px; height:37px; border-radius:50%; overflow:hidden; background:#145338; color:#b9ffdb; font-weight:700; }
+        .story-viewer-avatar img { width:100%; height:100%; object-fit:cover; }
+        .story-viewer-author strong,.story-viewer-author small { display:block; }
+        .story-viewer-author strong { font-size:12px; }
+        .story-viewer-author small { margin-top:3px; color:var(--muted); font-size:10px; }
+        .story-viewer-media { flex:1; min-height:0; display:grid; place-items:center; background:rgba(0,0,0,.25); overflow:hidden; }
+        .story-viewer-media img,.story-viewer-media video { max-width:100%; max-height:100%; width:100%; height:100%; object-fit:contain; }
+        .story-nav { position:absolute; top:50%; z-index:2; display:grid; place-items:center; width:35px; height:50px; border:0; border-radius:12px; background:rgba(0,0,0,.26); color:white; font-size:36px; cursor:pointer; transform:translateY(-10%); }
+        .story-prev { left:8px; } .story-next { right:8px; }
+        .story-viewer-caption { padding:9px 15px 3px; font-size:13px; line-height:1.45; }
+        .story-viewer-footer { display:flex; justify-content:space-between; gap:8px; padding:9px 15px 13px; color:var(--muted); font-size:10px; }
+        @media (max-width:650px) {
+            body { padding-bottom:66px; }
+            .stories-panel { padding:14px 12px 10px; margin-bottom:14px; border-radius:17px; }
+            .stories-heading h2 { font-size:15px; }
+            .stories-heading p { max-width:220px; font-size:10px; }
+            .stories-heading .btn { min-height:35px; padding:0 10px; font-size:11px; }
+            .stories-rail { gap:12px; }
+            .story-bubble { flex-basis:58px; }
+            .story-avatar-wrap { width:56px; height:56px; }
+            .story-create-card { padding:22px 17px; }
+            .story-viewer { height:88vh; min-height:360px; border-radius:20px; }
+            .story-modal { padding:8px; }
+            .story-nav { width:30px; height:44px; }
+            .layout { gap:14px; }
+            .card { border-radius:15px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; }
+        }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
 </head>
 
 <body>
@@ -747,6 +825,93 @@
                      role="status">{{ message }}</div>
             {% endfor %}
         {% endwith %}
+
+        <!-- Campus Stories -->
+        <section class="stories-panel glass-panel" aria-label="Campus Stories">
+            <div class="stories-heading">
+                <div>
+                    <h2>Campus Stories <span class="stories-live-dot"></span></h2>
+                    <p>Moments from around FUNAAB · disappear in 24 hours</p>
+                </div>
+                <button class="btn btn-primary story-add-trigger" type="button" id="openStoryCreator">＋ Add story</button>
+            </div>
+            <div class="stories-rail">
+                <button type="button" class="story-bubble story-create-bubble" id="openStoryCreatorBubble" aria-label="Create a story">
+                    <span class="story-avatar-wrap own-story-avatar">
+                        {% if student.profile_picture %}<img src="{{ student.profile_picture }}" alt="">{% else %}<span>{{ (student.full_name or student.username)[:1] | upper }}</span>{% endif %}
+                        <i>＋</i>
+                    </span>
+                    <span>Your story</span>
+                </button>
+                {% for group in story_groups %}
+                    {% if not group.is_mine %}
+                    <button type="button" class="story-bubble story-open-trigger {{ 'has-unseen' if group.unseen else '' }}"
+                        data-story-user="{{ group.user_id }}" aria-label="View {{ group.name }}'s story">
+                        <span class="story-avatar-wrap">
+                            {% if group.avatar %}<img src="{{ group.avatar }}" alt="">{% else %}<span>{{ group.name[:1] | upper }}</span>{% endif %}
+                        </span>
+                        <span>{{ group.name.split()[0] }}</span>
+                    </button>
+                    {% else %}
+                    {% for story in group.stories %}
+                    <button type="button" class="story-bubble story-open-trigger mine-story" data-story-id="{{ story.id }}" data-story-user="{{ group.user_id }}" aria-label="View your story">
+                        <span class="story-avatar-wrap own-story-ring">
+                            {% if group.avatar %}<img src="{{ group.avatar }}" alt="">{% else %}<span>{{ group.name[:1] | upper }}</span>{% endif %}
+                        </span>
+                        <span>Your story</span>
+                    </button>
+                    {% endfor %}
+                    {% endif %}
+                {% endfor %}
+                {% if story_groups|length == 0 %}
+                    <div class="stories-empty">Your campus moments will show up here.</div>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="story-modal" id="storyCreatorModal" hidden>
+            <div class="story-modal-backdrop" data-close-story-creator></div>
+            <section class="story-create-card glass-panel" role="dialog" aria-modal="true" aria-labelledby="storyCreatorTitle">
+                <button type="button" class="story-close" data-close-story-creator aria-label="Close">×</button>
+                <span class="eyebrow">YOUR MOMENT · 24 HOURS</span>
+                <h2 id="storyCreatorTitle">Add to your story</h2>
+                <p class="muted">Share a photo or short video with the campus. It disappears automatically after 24 hours.</p>
+                <form id="storyCreateForm" method="post" action="{{ url_for('create_story') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="story_media_url" id="storyMediaUrl">
+                    <input type="hidden" name="story_public_id" id="storyPublicId">
+                    <input type="hidden" name="story_media_type" id="storyMediaType">
+                    <label class="story-file-picker" for="storyFileInput"><span>＋</span><strong>Choose photo or video</strong><small>Images or videos · max 30 seconds recommended</small></label>
+                    <input type="file" id="storyFileInput" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" hidden>
+                    <div id="storyUploadPreview" class="story-upload-preview" hidden></div>
+                    <label class="story-caption-label" for="storyCaption">Caption (optional)</label>
+                    <input type="text" id="storyCaption" name="caption" maxlength="180" placeholder="Add a little context...">
+                    <div class="story-upload-status" id="storyUploadStatus" role="status">Choose a photo or video to begin.</div>
+                    <div class="story-create-actions">
+                        <button type="button" class="btn" data-close-story-creator>Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="publishStoryBtn" disabled>Publish story</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <div class="story-modal story-viewer-modal" id="storyViewerModal" hidden>
+            <div class="story-modal-backdrop" data-close-story-viewer></div>
+            <section class="story-viewer glass-panel" role="dialog" aria-modal="true" aria-label="Story viewer">
+                <div class="story-progress-track"><div id="storyProgressBar"></div></div>
+                <header class="story-viewer-header">
+                    <div class="story-viewer-author"><span class="story-viewer-avatar" id="storyViewerAvatar"></span><div><strong id="storyViewerName"></strong><small id="storyViewerTime"></small></div></div>
+                    <button type="button" class="story-close" data-close-story-viewer aria-label="Close">×</button>
+                </header>
+                <button type="button" class="story-nav story-prev" id="storyPrev" aria-label="Previous story">‹</button>
+                <div class="story-viewer-media" id="storyViewerMedia"></div>
+                <button type="button" class="story-nav story-next" id="storyNext" aria-label="Next story">›</button>
+                <div class="story-viewer-caption" id="storyViewerCaption"></div>
+                <div class="story-viewer-footer"><span id="storyViewerViews"></span><span>FUNAAB ONE · Campus Stories</span></div>
+            </section>
+        </div>
+
+        <script type="application/json" id="storyData">{{ story_json | tojson }}</script>
 
         <div class="layout">
             <section>
@@ -1359,5 +1524,153 @@
         });
     });
 </script>
+
+<script>
+(() => {
+  const csrf = document.querySelector('#storyCreateForm input[name="csrf_token"]')?.value || '';
+  const creator = document.getElementById('storyCreatorModal');
+  const viewer = document.getElementById('storyViewerModal');
+  const fileInput = document.getElementById('storyFileInput');
+  const preview = document.getElementById('storyUploadPreview');
+  const status = document.getElementById('storyUploadStatus');
+  const publish = document.getElementById('publishStoryBtn');
+  const form = document.getElementById('storyCreateForm');
+  const dataNode = document.getElementById('storyData');
+  let groups = [];
+  try { groups = JSON.parse(dataNode?.textContent || '[]'); } catch (_) {}
+  let chosenFile = null, uploaded = false, activeStories = [], activeIndex = 0, viewerTimer = null;
+
+  const openCreator = () => { creator.hidden = false; document.body.style.overflow = 'hidden'; };
+  const closeCreator = () => { creator.hidden = true; document.body.style.overflow = ''; };
+  document.getElementById('openStoryCreator')?.addEventListener('click', openCreator);
+  document.getElementById('openStoryCreatorBubble')?.addEventListener('click', openCreator);
+  creator?.querySelectorAll('[data-close-story-creator]').forEach(el => el.addEventListener('click', closeCreator));
+
+  fileInput?.addEventListener('change', () => {
+    chosenFile = fileInput.files?.[0] || null; uploaded = false;
+    document.getElementById('storyMediaUrl').value = '';
+    document.getElementById('storyPublicId').value = '';
+    document.getElementById('storyMediaType').value = '';
+    preview.innerHTML = ''; preview.hidden = !chosenFile; publish.disabled = !chosenFile;
+    if (!chosenFile) { status.textContent = 'Choose a photo or video to begin.'; return; }
+    const isVideo = chosenFile.type.startsWith('video/');
+    const limit = isVideo ? 100 * 1024 * 1024 : 15 * 1024 * 1024;
+    if ((!isVideo && !chosenFile.type.startsWith('image/')) || chosenFile.size > limit) {
+      chosenFile = null; fileInput.value = ''; preview.hidden = true; publish.disabled = true;
+      status.textContent = isVideo ? 'Videos must be 100 MB or smaller.' : 'Choose an image or video within the upload limit.';
+      return;
+    }
+    const element = document.createElement(isVideo ? 'video' : 'img');
+    element.src = URL.createObjectURL(chosenFile);
+    if (isVideo) { element.controls = true; element.muted = true; }
+    element.alt = isVideo ? 'Video story preview' : 'Photo story preview';
+    preview.appendChild(element);
+    status.textContent = `${chosenFile.name} · ${(chosenFile.size / (1024 * 1024)).toFixed(1)} MB · ready to upload`;
+  });
+
+  async function uploadStory(file) {
+    const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+    const signatureResponse = await fetch('/api/stories/upload-signature', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':csrf},
+      body: JSON.stringify({resource_type:resourceType})
+    });
+    const signature = await signatureResponse.json();
+    if (!signatureResponse.ok) throw new Error(signature.error || 'Could not authorize upload.');
+    status.textContent = 'Uploading your story…';
+    const payload = new FormData();
+    ['api_key','timestamp','folder','public_id','signature'].forEach(key => payload.append(key, signature[key]));
+    payload.append('file', file);
+    const endpoint = `https://api.cloudinary.com/v1_1/${signature.cloud_name}/${resourceType}/upload`;
+    const response = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', endpoint);
+      xhr.upload.onprogress = event => {
+        if (event.lengthComputable) status.textContent = `Uploading your story… ${Math.round(event.loaded/event.total*100)}%`;
+      };
+      xhr.onload = () => {
+        let result = {}; try { result = JSON.parse(xhr.responseText); } catch (_) {}
+        if (xhr.status >= 200 && xhr.status < 300) resolve(result);
+        else reject(new Error(result.error?.message || 'Cloudinary upload failed.'));
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload.'));
+      xhr.send(payload);
+    });
+    return response;
+  }
+
+  form?.addEventListener('submit', async event => {
+    if (uploaded) return;
+    event.preventDefault();
+    if (!chosenFile) { status.textContent = 'Choose a photo or video first.'; return; }
+    publish.disabled = true;
+    try {
+      const result = await uploadStory(chosenFile);
+      document.getElementById('storyMediaUrl').value = result.secure_url || '';
+      document.getElementById('storyPublicId').value = result.public_id || '';
+      document.getElementById('storyMediaType').value = result.resource_type || (chosenFile.type.startsWith('video/')?'video':'image');
+      if (!document.getElementById('storyMediaUrl').value || !document.getElementById('storyPublicId').value) throw new Error('Upload returned incomplete media details.');
+      uploaded = true; status.textContent = 'Upload complete. Publishing story…'; form.submit();
+    } catch (error) {
+      status.textContent = error.message || 'Upload failed. Please try again.';
+      publish.disabled = false;
+    }
+  });
+
+  function flattenGroup(group) {
+    return (group.stories || []).map(story => ({
+      id: story.id, user_id: group.user_id, username: group.username,
+      name: group.name, avatar: group.avatar, media_url: story.media_url,
+      media_type: story.media_type, caption: story.caption || '', created_at: story.created_at,
+      expires_at: story.expires_at
+    }));
+  }
+  // SQLAlchemy objects are not directly JSON serializable, so story viewer data is hydrated from DOM attributes below.
+  document.querySelectorAll('.story-open-trigger').forEach(button => {
+    button.addEventListener('click', () => {
+      const userId = Number(button.dataset.storyUser);
+      const mineId = Number(button.dataset.storyId || 0);
+      const group = groups.find(item => Number(item.user_id) === userId);
+      if (!group) return;
+      activeStories = flattenGroup(group);
+      if (mineId) activeIndex = Math.max(0, activeStories.findIndex(item => item.id === mineId));
+      else activeIndex = 0;
+      showStory();
+    });
+  });
+  function showStory() {
+    if (!activeStories.length || activeIndex < 0 || activeIndex >= activeStories.length) { closeViewer(); return; }
+    const item = activeStories[activeIndex];
+    viewer.hidden = false; document.body.style.overflow = 'hidden';
+    document.getElementById('storyViewerName').textContent = item.name;
+    document.getElementById('storyViewerTime').textContent = 'Campus story';
+    const avatar = document.getElementById('storyViewerAvatar');
+    avatar.innerHTML = item.avatar ? `<img src="${item.avatar.replace(/"/g,'&quot;')}" alt="">` : item.name.slice(0,1).toUpperCase();
+    const media = document.getElementById('storyViewerMedia');
+    media.innerHTML = '';
+    const el = document.createElement(item.media_type === 'video' ? 'video' : 'img');
+    el.src = item.media_url;
+    if (item.media_type === 'video') { el.controls = true; el.autoplay = true; el.playsInline = true; }
+    el.alt = item.caption || 'Campus story';
+    media.appendChild(el);
+    document.getElementById('storyViewerCaption').textContent = item.caption;
+    document.getElementById('storyViewerViews').textContent = item.user_id === {{ current_user.id }} ? 'Your story' : 'Campus moment';
+    document.getElementById('storyProgressBar').style.width = '0%';
+    clearTimeout(viewerTimer);
+    fetch(`/stories/${item.id}/view`, {method:'POST', headers:{'X-CSRFToken':csrf}})
+      .then(r => r.ok ? r.json() : null).then(result => { if (result) document.getElementById('storyViewerViews').textContent = `${result.views} views`; }).catch(()=>{});
+    if (item.media_type !== 'video') viewerTimer = setTimeout(nextStory, 7000);
+    requestAnimationFrame(() => { document.getElementById('storyProgressBar').style.width = '100%'; });
+  }
+  function closeViewer() { viewer.hidden = true; document.body.style.overflow = ''; clearTimeout(viewerTimer); document.getElementById('storyViewerMedia').innerHTML=''; }
+  function nextStory() { if (activeIndex < activeStories.length - 1) { activeIndex++; showStory(); } else closeViewer(); }
+  function prevStory() { if (activeIndex > 0) { activeIndex--; showStory(); } }
+  document.getElementById('storyNext')?.addEventListener('click', nextStory);
+  document.getElementById('storyPrev')?.addEventListener('click', prevStory);
+  viewer?.querySelectorAll('[data-close-story-viewer]').forEach(el => el.addEventListener('click', closeViewer));
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeCreator(); closeViewer(); } });
+})();
+</script>
+
 </body>
 </html>
