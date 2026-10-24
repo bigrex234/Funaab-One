@@ -406,7 +406,8 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     conversation_id = db.Column(db.Integer, db.ForeignKey("conversation.id", ondelete="CASCADE"), nullable=False, index=True)
     sender_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
-    body = db.Column(db.String(2000), nullable=False)
+    body = db.Column(db.String(2000), nullable=False, default="")
+    image_url = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
     conversation = db.relationship("Conversation", back_populates="messages")
     sender = db.relationship("User")
@@ -1935,22 +1936,45 @@ def conversation_view(conversation_id):
             abort(403, description="This private conversation is unavailable because a block is active.")
     if request.method == "POST":
         body = request.form.get("body", "").strip()
-        if not body:
-            flash("Write a message first.", "error")
-        elif len(body) > 2000:
+        image_file = request.files.get("image")
+        image_url = None
+        if len(body) > 2000:
             flash("Messages must be 2,000 characters or fewer.", "error")
+        elif not body and not (image_file and image_file.filename):
+            flash("Write a message or attach an image first.", "error")
         else:
             try:
-                db.session.add(Message(conversation_id=conversation.id, sender_id=current_user.id, body=body))
+                if image_file and image_file.filename:
+                    # Keep uploads within Vercel's request limit and accept only real image signatures.
+                    data = image_file.stream.read(3 * 1024 * 1024 + 1)
+                    if not data or len(data) > 3 * 1024 * 1024:
+                        raise ValueError("Chat images must be 3 MB or smaller.")
+                    valid_image = (
+                        data.startswith(b"\xff\xd8\xff")
+                        or data.startswith(b"\x89PNG\r\n\x1a\n")
+                        or data[:6] in (b"GIF87a", b"GIF89a")
+                        or (data[:4] == b"RIFF" and data[8:12] == b"WEBP")
+                    )
+                    if not valid_image:
+                        raise ValueError("Choose a valid JPG, PNG, GIF, or WEBP image.")
+                    if not CLOUDINARY_ENABLED:
+                        raise ValueError("Image messaging is temporarily unavailable. Please try again later.")
+                    image_url = upload_media_to_cloudinary(io.BytesIO(data), resource_type="image", folder="funaab-one/messages")
+                    if not image_url:
+                        raise ValueError("The image could not be uploaded. Please try again.")
+                db.session.add(Message(conversation_id=conversation.id, sender_id=current_user.id, body=body, image_url=image_url))
                 for member in conversation.members:
                     if member.user_id != current_user.id:
                         create_notification(member.user_id, current_user.id, "message", "conversation",
                                             conversation_id=conversation.id)
                 db.session.commit()
                 return redirect(url_for("conversation_view", conversation_id=conversation.id))
-            except SQLAlchemyError:
+            except ValueError as exc:
                 db.session.rollback()
-                app.logger.exception("Sending message failed")
+                flash(str(exc), "error")
+            except Exception:
+                db.session.rollback()
+                app.logger.exception("Sending message or uploading chat image failed")
                 flash("Could not send your message. Please try again.", "error")
     membership.last_read_at = utcnow()
     db.session.commit()
@@ -1962,6 +1986,30 @@ def conversation_view(conversation_id):
         display_title = other.full_name if other else "Conversation"
     return render_template("conversation.html", student=current_user, conversation=conversation,
                            display_title=display_title, members=members)
+
+
+@app.route("/messages/<int:conversation_id>/<int:message_id>/delete", methods=["POST"])
+@login_required
+def delete_message(conversation_id, message_id):
+    conversation = db.session.get(Conversation, conversation_id)
+    if conversation is None:
+        abort(404)
+    if _conversation_member(conversation_id) is None:
+        abort(403)
+    message = db.session.get(Message, message_id)
+    if message is None or message.conversation_id != conversation_id:
+        abort(404)
+    if message.sender_id != current_user.id and not current_user.is_admin:
+        abort(403)
+    try:
+        db.session.delete(message)
+        db.session.commit()
+        flash("Message deleted.", "success")
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Deleting message failed")
+        flash("Could not delete the message. Please try again.", "error")
+    return redirect(url_for("conversation_view", conversation_id=conversation_id))
 
 
 @app.route("/messages/<int:conversation_id>/poll")
@@ -1996,7 +2044,7 @@ def poll_messages(conversation_id):
         "id": m.id, "sender_id": m.sender_id, "sender_name": m.sender.full_name,
         "username": m.sender.username, "avatar": m.sender.profile_picture,
         "initial": (m.sender.full_name or m.sender.username)[:1].upper(),
-        "body": m.body, "created_at": m.created_at.strftime("%b %d, %H:%M"),
+        "body": m.body, "image_url": m.image_url, "created_at": m.created_at.strftime("%b %d, %H:%M"),
         "mine": m.sender_id == current_user.id,
     } for m in rows]}
 
@@ -2408,6 +2456,54 @@ def add_comment(post_id):
         flash("Could not add your comment. Please try again.", "error")
 
     return dashboard_redirect()
+
+
+@app.route("/comment/<int:comment_id>/delete", methods=["POST"])
+@login_required
+def delete_comment(comment_id):
+    comment = db.session.get(Comment, comment_id)
+    if comment is None:
+        abort(404)
+    if comment.user_id != current_user.id and not current_user.is_admin:
+        abort(403)
+    try:
+        db.session.delete(comment)
+        db.session.commit()
+        flash("Comment deleted.", "success")
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Deleting comment failed")
+        flash("Could not delete the comment. Please try again.", "error")
+    target = request.form.get("next")
+    if is_safe_redirect(target):
+        return redirect(target)
+    return dashboard_redirect()
+
+
+@app.route("/communities/<int:community_id>/comments/<int:comment_id>/delete", methods=["POST"])
+@login_required
+def delete_community_comment(community_id, comment_id):
+    group = db.session.get(Community, community_id)
+    comment = db.session.get(CommunityPostComment, comment_id)
+    if group is None or comment is None or comment.post.community_id != group.id:
+        abort(404)
+    if comment.author_id != current_user.id and not current_user.is_admin:
+        abort(403)
+    is_member = db.session.scalar(select(CommunityMember.id).where(
+        CommunityMember.community_id == group.id, CommunityMember.user_id == current_user.id
+    )) is not None
+    if not is_member and not current_user.is_admin:
+        abort(403)
+    post_id = comment.post_id
+    try:
+        db.session.delete(comment)
+        db.session.commit()
+        flash("Comment deleted.", "success")
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Deleting community comment failed")
+        flash("Could not delete the comment. Please try again.", "error")
+    return redirect(url_for("community_detail", community_id=group.id) + f"#post-{post_id}")
 
 
 # ==================================================
