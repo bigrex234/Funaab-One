@@ -11,7 +11,7 @@ from functools import wraps
 from urllib.parse import urljoin, urlparse
 
 from flask import (
-    Flask, abort, flash, redirect, render_template, request, url_for
+    Flask, abort, flash, jsonify, redirect, render_template, request, url_for
 )
 from flask_login import (
     LoginManager, UserMixin, current_user, login_required,
@@ -1722,6 +1722,56 @@ def find_students():
         following_ids=following_ids,
         query=query,
     )
+
+
+@app.route("/api/search-suggestions")
+@login_required
+def search_suggestions():
+    """Small, permission-aware search results for the live search box."""
+    query = request.args.get("q", "").strip()[:100]
+    if len(query) < 2:
+        return jsonify({"students": [], "posts": []})
+
+    hidden_user_ids = blocked_user_ids_for(current_user.id)
+    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    pattern = f"%{escaped}%"
+
+    user_statement = select(User).where(
+        User.id != current_user.id,
+        or_(User.username.ilike(pattern, escape="\\"),
+            User.full_name.ilike(pattern, escape="\\"),
+            User.department.ilike(pattern, escape="\\")),
+    )
+    if hidden_user_ids:
+        user_statement = user_statement.where(User.id.not_in(hidden_user_ids))
+    users = db.session.scalars(user_statement.order_by(User.username.asc()).limit(6)).all()
+
+    post_statement = select(Post).join(User, Post.user_id == User.id).where(
+        Post.body.ilike(pattern, escape="\\"),
+        User.id != current_user.id,
+    )
+    if hidden_user_ids:
+        post_statement = post_statement.where(User.id.not_in(hidden_user_ids))
+    matching_posts = db.session.scalars(
+        post_statement.order_by(Post.created_at.desc()).limit(6)
+    ).all()
+
+    return jsonify({
+        "students": [{
+            "name": user.full_name or user.username,
+            "username": user.username,
+            "department": user.department or "",
+            "avatar": user.profile_picture or "",
+            "url": url_for("profile", username=user.username),
+        } for user in users],
+        "posts": [{
+            "id": post.id,
+            "text": (post.body or "").strip()[:180],
+            "username": post.author.username,
+            "name": post.author.full_name or post.author.username,
+            "url": url_for("general_search", q=query) + f"#post-{post.id}",
+        } for post in matching_posts],
+    })
 
 
 @app.route("/search")
