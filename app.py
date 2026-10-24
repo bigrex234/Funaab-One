@@ -797,6 +797,8 @@ def dashboard_redirect():
 
 @app.errorhandler(CSRFError)
 def handle_csrf_error(error):
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json":
+        return jsonify({"ok": False, "error": "Your session expired. Refresh the page and try again."}), 400
     flash("Your session expired. Please try again.", "error")
 
     if is_safe_redirect(request.referrer):
@@ -2842,32 +2844,70 @@ def create_post():
 @app.route("/poll/<int:poll_id>/vote", methods=["POST"])
 @login_required
 def vote_poll(poll_id):
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
+
+    def vote_response(ok, message, status=200):
+        if is_ajax:
+            return jsonify({"ok": ok, "message": message}), status
+        flash(message, "success" if ok else "error")
+        return redirect(url_for("dashboard"))
+
     poll = db.get_or_404(Poll, poll_id)
     option_id = request.form.get("option_id", type=int)
     option = next((item for item in poll.options if item.id == option_id), None)
     if option is None:
-        flash("Choose a valid poll option.", "error")
-        return redirect(url_for("dashboard"))
+        return vote_response(False, "Choose a valid poll option.", 400)
     if poll.closes_at and poll.closes_at <= datetime.now():
-        flash("This poll is closed.", "error")
-        return redirect(url_for("dashboard"))
+        return vote_response(False, "This poll is closed.", 400)
+
     existing = db.session.scalar(select(PollVote).where(
         PollVote.poll_id == poll.id, PollVote.user_id == current_user.id
     ))
     if existing:
         if not poll.allow_vote_change:
-            flash("You've already voted in this poll.", "info")
-            return redirect(url_for("dashboard"))
+            return vote_response(False, "You've already voted in this poll.", 409)
         existing.option_id = option.id
         existing.created_at = utcnow()
     else:
         db.session.add(PollVote(poll_id=poll.id, option_id=option.id, user_id=current_user.id))
+
     try:
         db.session.commit()
-        flash("Your vote has been saved!", "success")
     except IntegrityError:
         db.session.rollback()
-        flash("Your vote could not be saved. Please try again.", "error")
+        return vote_response(False, "Your vote could not be saved. Please try again.", 409)
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Poll vote failed")
+        return vote_response(False, "Your vote could not be saved. Please try again.", 500)
+
+    # Return authoritative counts from the database so every option and percentage
+    # can be refreshed in place without trusting client-side vote totals.
+    options_data = []
+    total_votes = 0
+    for poll_option in poll.options:
+        count = db.session.scalar(select(db.func.count(PollVote.id)).where(PollVote.option_id == poll_option.id)) or 0
+        total_votes += count
+        options_data.append({"id": poll_option.id, "text": poll_option.text, "votes": count})
+    for item in options_data:
+        item["percent"] = round(item["votes"] * 100 / total_votes) if total_votes else 0
+    my_vote = db.session.scalar(select(PollVote.option_id).where(
+        PollVote.poll_id == poll.id, PollVote.user_id == current_user.id
+    ))
+    closed = bool(poll.closes_at and poll.closes_at <= datetime.now())
+    if is_ajax:
+        return jsonify({
+            "ok": True,
+            "message": "Your vote has been saved!",
+            "poll_id": poll.id,
+            "options": options_data,
+            "total_votes": total_votes,
+            "my_vote": my_vote,
+            "closed": closed,
+            "allow_vote_change": poll.allow_vote_change,
+            "closes_at": poll.closes_at.strftime("%b %d, %H:%M") if poll.closes_at else None,
+        })
+    flash("Your vote has been saved!", "success")
     return redirect(url_for("dashboard"))
 
 
