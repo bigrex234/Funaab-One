@@ -364,6 +364,32 @@ class Follow(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
 
+class Story(db.Model):
+    """A short-lived campus story backed by a verified Cloudinary asset."""
+    __tablename__ = "story"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    media_url = db.Column(db.String(500), nullable=False)
+    public_id = db.Column(db.String(500), nullable=False, unique=True)
+    media_type = db.Column(db.String(10), nullable=False)
+    caption = db.Column(db.String(180), nullable=False, default="")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    author = db.relationship("User", backref=db.backref("stories", cascade="all, delete-orphan"))
+    views = db.relationship("StoryView", back_populates="story", cascade="all, delete-orphan")
+
+
+class StoryView(db.Model):
+    __tablename__ = "story_view"
+    __table_args__ = (db.UniqueConstraint("story_id", "viewer_id", name="uq_story_viewer"),)
+    id = db.Column(db.Integer, primary_key=True)
+    story_id = db.Column(db.Integer, db.ForeignKey("story.id", ondelete="CASCADE"), nullable=False, index=True)
+    viewer_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    viewed_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    story = db.relationship("Story", back_populates="views")
+    viewer = db.relationship("User")
+
+
 
 class Community(db.Model):
     """A student-created campus group."""
@@ -1394,16 +1420,168 @@ def dashboard():
         ).all()
     )
 
+    now_utc = utcnow()
+    active_stories = db.session.scalars(
+        select(Story).where(Story.expires_at > now_utc)
+        .order_by(Story.created_at.desc()).limit(150)
+    ).all()
+    stories_by_user = {}
+    for story in active_stories:
+        stories_by_user.setdefault(story.user_id, []).append(story)
+    story_groups = []
+    for owner_id, owner_stories in stories_by_user.items():
+        owner = owner_stories[0].author
+        story_groups.append({
+            "user_id": owner_id,
+            "username": owner.username,
+            "name": owner.full_name or owner.username,
+            "avatar": owner.profile_picture,
+            "is_mine": owner_id == current_user.id,
+            "stories": owner_stories,
+            "unseen": any(
+                not db.session.scalar(select(StoryView.id).where(
+                    StoryView.story_id == item.id,
+                    StoryView.viewer_id == current_user.id
+                ))
+                for item in owner_stories if owner_id != current_user.id
+            ) if owner_id != current_user.id else False,
+        })
+    story_groups.sort(key=lambda group: (not group["is_mine"], not group["unseen"], group["name"].lower()))
+    story_json = [{
+        "user_id": group["user_id"],
+        "username": group["username"],
+        "name": group["name"],
+        "avatar": group["avatar"],
+        "stories": [{
+            "id": story.id,
+            "media_url": story.media_url,
+            "media_type": story.media_type,
+            "caption": story.caption or "",
+            "created_at": story.created_at.isoformat() if story.created_at else "",
+            "expires_at": story.expires_at.isoformat() if story.expires_at else "",
+        } for story in group["stories"]],
+    } for group in story_groups]
+
     return render_template(
         "dashboard.html",
         student=current_user,
         posts=posts,
+        story_groups=story_groups,
+        story_json=story_json,
         liked_post_ids=liked_post_ids,
         reposted_post_ids=reposted_post_ids,
         bookmarked_post_ids=bookmarked_post_ids,
         media_enabled=True,
         now=datetime.now(),
     )
+
+
+# ==================================================
+# CAMPUS STORIES
+# ==================================================
+
+@app.route("/api/stories/upload-signature", methods=["POST"])
+@login_required
+def story_upload_signature():
+    if not CLOUDINARY_ENABLED:
+        return {"error": "Media uploads are not configured."}, 503
+    payload = request.get_json(silent=True) or {}
+    resource_type = payload.get("resource_type")
+    if resource_type not in {"image", "video"}:
+        return {"error": "Choose a photo or video."}, 400
+    timestamp = int(datetime.now(timezone.utc).timestamp())
+    public_id = f"story_{current_user.id}_{uuid.uuid4().hex}"
+    params = {
+        "timestamp": timestamp,
+        "folder": "funaab-one/stories",
+        "public_id": public_id,
+        "overwrite": "false",
+        "unique_filename": "false",
+    }
+    signature = cloudinary.utils.api_sign_request(params, CLOUDINARY_API_SECRET)
+    return {
+        "cloud_name": CLOUDINARY_CLOUD_NAME,
+        "api_key": CLOUDINARY_API_KEY,
+        "timestamp": timestamp,
+        "folder": params["folder"],
+        "public_id": public_id,
+        "signature": signature,
+        "resource_type": resource_type,
+    }
+
+
+@app.route("/stories/create", methods=["POST"])
+@login_required
+def create_story():
+    media_url = request.form.get("story_media_url", "").strip()
+    public_id = request.form.get("story_public_id", "").strip()
+    media_type = request.form.get("story_media_type", "").strip()
+    caption = request.form.get("caption", "").strip()[:180]
+    if not media_url or not public_id or media_type not in {"image", "video"}:
+        flash("Choose a photo or video for your story.", "error")
+        return redirect(url_for("dashboard"))
+    expected_prefix = f"funaab-one/stories/story_{current_user.id}_"
+    parsed_url = urlparse(media_url)
+    if (not CLOUDINARY_ENABLED or not public_id.startswith(expected_prefix)
+            or parsed_url.scheme != "https" or not parsed_url.hostname
+            or not parsed_url.hostname.endswith("cloudinary.com")):
+        flash("This story media could not be verified for your account.", "error")
+        return redirect(url_for("dashboard"))
+    try:
+        asset = cloudinary.api.resource(public_id, resource_type=media_type, type="upload")
+        verified_url = asset.get("secure_url")
+        if not verified_url or asset.get("public_id") != public_id:
+            raise ValueError("Asset verification failed.")
+        story = Story(
+            user_id=current_user.id,
+            media_url=verified_url,
+            public_id=public_id,
+            media_type=media_type,
+            caption=caption,
+            expires_at=utcnow() + timedelta(hours=24),
+        )
+        db.session.add(story)
+        db.session.commit()
+        flash("Your story is live for 24 hours!", "success")
+    except Exception:
+        db.session.rollback()
+        app.logger.exception("Story creation failed")
+        flash("We couldn't publish that story. Please try again.", "error")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/stories/<int:story_id>/view", methods=["POST"])
+@login_required
+def view_story(story_id):
+    story = db.session.get(Story, story_id)
+    if story is None or story.expires_at <= utcnow():
+        abort(404)
+    if story.user_id != current_user.id and users_blocked_between(current_user.id, story.user_id):
+        abort(404)
+    if story.user_id != current_user.id:
+        existing = db.session.scalar(select(StoryView).where(
+            StoryView.story_id == story.id, StoryView.viewer_id == current_user.id
+        ))
+        if existing is None:
+            db.session.add(StoryView(story_id=story.id, viewer_id=current_user.id))
+            db.session.commit()
+    return {"ok": True, "views": db.session.scalar(
+        select(db.func.count(StoryView.id)).where(StoryView.story_id == story.id)
+    ) or 0}
+
+
+@app.route("/stories/<int:story_id>/delete", methods=["POST"])
+@login_required
+def delete_story(story_id):
+    story = db.session.get(Story, story_id)
+    if story is None:
+        abort(404)
+    if story.user_id != current_user.id and not current_user.is_admin:
+        abort(403)
+    db.session.delete(story)
+    db.session.commit()
+    flash("Story deleted.", "success")
+    return redirect(url_for("dashboard"))
 
 
 # ==================================================
