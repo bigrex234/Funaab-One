@@ -311,6 +311,39 @@ class Post(db.Model):
         cascade="all, delete-orphan",
     )
 
+    poll = db.relationship("Poll", back_populates="post", uselist=False, cascade="all, delete-orphan")
+
+
+class Poll(db.Model):
+    __tablename__ = "poll"
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    closes_at = db.Column(db.DateTime, nullable=True)
+    allow_vote_change = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
+    post = db.relationship("Post", back_populates="poll")
+    options = db.relationship("PollOption", back_populates="poll", cascade="all, delete-orphan", order_by="PollOption.position")
+
+
+class PollOption(db.Model):
+    __tablename__ = "poll_option"
+    id = db.Column(db.Integer, primary_key=True)
+    poll_id = db.Column(db.Integer, db.ForeignKey("poll.id", ondelete="CASCADE"), nullable=False, index=True)
+    text = db.Column(db.String(120), nullable=False)
+    position = db.Column(db.Integer, nullable=False, default=0)
+    poll = db.relationship("Poll", back_populates="options")
+    votes = db.relationship("PollVote", back_populates="option", cascade="all, delete-orphan")
+
+
+class PollVote(db.Model):
+    __tablename__ = "poll_vote"
+    __table_args__ = (db.UniqueConstraint("poll_id", "user_id", name="uq_poll_vote_user"),)
+    id = db.Column(db.Integer, primary_key=True)
+    poll_id = db.Column(db.Integer, db.ForeignKey("poll.id", ondelete="CASCADE"), nullable=False, index=True)
+    option_id = db.Column(db.Integer, db.ForeignKey("poll_option.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    option = db.relationship("PollOption", back_populates="votes")
+
 
 class Follow(db.Model):
     """A user following another user; stored in its own table."""
@@ -1369,6 +1402,7 @@ def dashboard():
         reposted_post_ids=reposted_post_ids,
         bookmarked_post_ids=bookmarked_post_ids,
         media_enabled=True,
+        now=datetime.now(),
     )
 
 
@@ -2363,6 +2397,49 @@ def create_post():
     uploaded_public_id = request.form.get("uploaded_media_public_id", "").strip()
     uploaded_type = request.form.get("uploaded_media_type", "").strip()
     has_direct_media = bool(uploaded_url and uploaded_public_id and uploaded_type)
+    post_type = request.form.get("post_type", "standard")
+
+    if post_type == "poll":
+        option_values = request.form.getlist("poll_option")
+        options = []
+        seen = set()
+        for value in option_values:
+            value = value.strip()[:120]
+            if value and value.casefold() not in seen:
+                options.append(value)
+                seen.add(value.casefold())
+        if not body:
+            flash("Enter a question for your poll.", "error")
+            return redirect(url_for("dashboard"))
+        if len(body) > MAX_POST_LENGTH:
+            flash(f"Poll questions can be at most {MAX_POST_LENGTH} characters.", "error")
+            return redirect(url_for("dashboard"))
+        if not 2 <= len(options) <= 6:
+            flash("A poll needs 2–6 different answer options.", "error")
+            return redirect(url_for("dashboard"))
+        closes_at = None
+        closes_value = request.form.get("poll_closes_at", "").strip()
+        if closes_value:
+            try:
+                closes_at = datetime.fromisoformat(closes_value)
+                if closes_at <= datetime.now():
+                    raise ValueError
+            except ValueError:
+                flash("Choose a valid poll closing time in the future.", "error")
+                return redirect(url_for("dashboard"))
+        try:
+            post = Post(body=body, user_id=current_user.id)
+            poll = Poll(closes_at=closes_at, allow_vote_change=True)
+            poll.options = [PollOption(text=option, position=index) for index, option in enumerate(options)]
+            post.poll = poll
+            db.session.add(post)
+            db.session.commit()
+            flash("Poll published!", "success")
+        except Exception:
+            db.session.rollback()
+            app.logger.exception("Poll creation failed")
+            flash("Could not publish the poll. Please try again.", "error")
+        return redirect(url_for("dashboard"))
 
     if len(body) > MAX_POST_LENGTH:
         flash(f"Posts can be at most {MAX_POST_LENGTH} characters.", "error")
@@ -2473,6 +2550,38 @@ def create_post():
             final_path.with_suffix(".jpg").unlink(missing_ok=True)
         app.logger.exception("Post creation failed")
         flash("Could not publish the post. Please try again.", "error")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/poll/<int:poll_id>/vote", methods=["POST"])
+@login_required
+def vote_poll(poll_id):
+    poll = db.get_or_404(Poll, poll_id)
+    option_id = request.form.get("option_id", type=int)
+    option = next((item for item in poll.options if item.id == option_id), None)
+    if option is None:
+        flash("Choose a valid poll option.", "error")
+        return redirect(url_for("dashboard"))
+    if poll.closes_at and poll.closes_at <= datetime.now():
+        flash("This poll is closed.", "error")
+        return redirect(url_for("dashboard"))
+    existing = db.session.scalar(select(PollVote).where(
+        PollVote.poll_id == poll.id, PollVote.user_id == current_user.id
+    ))
+    if existing:
+        if not poll.allow_vote_change:
+            flash("You've already voted in this poll.", "info")
+            return redirect(url_for("dashboard"))
+        existing.option_id = option.id
+        existing.created_at = utcnow()
+    else:
+        db.session.add(PollVote(poll_id=poll.id, option_id=option.id, user_id=current_user.id))
+    try:
+        db.session.commit()
+        flash("Your vote has been saved!", "success")
+    except IntegrityError:
+        db.session.rollback()
+        flash("Your vote could not be saved. Please try again.", "error")
     return redirect(url_for("dashboard"))
 
 
