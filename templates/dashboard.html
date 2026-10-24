@@ -1089,8 +1089,8 @@
 
                                 <div class="post-stats">
                                     <span class="like-count" data-like-count="{{ post.id }}">{{ post.likes|length }} likes</span>
-                                    <span>{{ post.comments|length }} comments</span>
-                                    <span>{{ post.reposts|length }} reposts</span>
+                                    <span class="comment-count">{{ post.comments|length }} comments</span>
+                                    <span class="repost-count">{{ post.reposts|length }} reposts</span>
                                 </div>
 
                                 <div class="post-buttons">
@@ -1346,6 +1346,74 @@
             window.setTimeout(() => notice.remove(), 3500);
         } finally {
             button.disabled = false;
+        }
+    });
+
+    // Comments, reposts and bookmarks update in place; normal navigation remains the fallback.
+    function showActionError(form, message) {
+        let notice = form.querySelector(".ajax-action-error");
+        if (!notice) {
+            notice = document.createElement("span");
+            notice.className = "ajax-action-error";
+            notice.setAttribute("role", "status");
+            notice.style.cssText = "font-size:11px;color:var(--danger);align-self:center";
+            form.appendChild(notice);
+        }
+        notice.textContent = message || "Please try again.";
+    }
+    document.addEventListener("submit", async (event) => {
+        const form = event.target.closest("form");
+        if (!form) return;
+        const isComment = form.matches(".comment-form");
+        const isRepost = form.action.includes("/repost");
+        const isBookmark = form.action.includes("/bookmark");
+        if (!isComment && !isRepost && !isBookmark) return;
+        event.preventDefault();
+        const button = form.querySelector('button[type="submit"]');
+        if (!button || button.disabled) return;
+        const originalText = button.textContent.trim();
+        button.disabled = true;
+        try {
+            const response = await fetch(form.action, {
+                method: "POST", body: new FormData(form), credentials: "same-origin",
+                headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) throw new Error(result.error || "Action failed. Please try again.");
+            if (isComment) {
+                const comments = form.closest(".comments");
+                const post = form.closest(".post");
+                const comment = document.createElement("div");
+                comment.className = "comment";
+                const avatar = document.createElement("div"); avatar.className = "comment-avatar";
+                if (result.profile_picture) {
+                    const img = document.createElement("img"); img.src = result.profile_picture; img.alt = ""; avatar.appendChild(img);
+                } else avatar.textContent = (result.author_name || result.username || "?").slice(0,1).toUpperCase();
+                const content = document.createElement("div"); content.className = "comment-content";
+                const meta = document.createElement("div"); meta.className = "comment-meta"; meta.textContent = result.author_name || result.username;
+                const time = document.createElement("span"); time.textContent = "just now"; meta.appendChild(time);
+                const text = document.createElement("div"); text.className = "comment-text"; text.textContent = result.body;
+                content.append(meta, text); comment.append(avatar, content);
+                const title = comments.querySelector(".comments-title");
+                const firstExisting = comments.querySelector(".comment");
+                if (firstExisting) firstExisting.before(comment); else form.before(comment);
+                if (title) title.textContent = `Comments (${result.comment_count})`;
+                const stat = post?.querySelector(".comment-count"); if (stat) stat.textContent = `${result.comment_count} comments`;
+                const input = form.querySelector('input[name="body"]'); if (input) input.value = "";
+                const error = form.querySelector(".ajax-action-error"); if (error) error.remove();
+            } else if (isRepost) {
+                button.textContent = "↻ Reposted"; button.classList.add("reposted"); button.disabled = true;
+                const post = form.closest(".post");
+                const stat = post?.querySelector(".repost-count"); if (stat && result.repost_count !== undefined) stat.textContent = `${result.repost_count} reposts`;
+            } else if (isBookmark) {
+                button.textContent = result.saved ? "▣ Saved" : "▢ Save";
+                button.classList.toggle("reposted", result.saved);
+                const error = form.querySelector(".ajax-action-error"); if (error) error.remove();
+            }
+        } catch (error) {
+            showActionError(form, error.message || "Please try again.");
+        } finally {
+            if (!(isRepost && button.classList.contains("reposted"))) button.disabled = false;
         }
     });
 
