@@ -762,6 +762,10 @@
                             <div class="composer-media-tools">
                                 <input type="file" id="mediaInput" name="media" hidden
                                        accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-m4v,video/x-matroska">
+                                <input type="hidden" name="uploaded_media_url" id="uploadedMediaUrl">
+                                <input type="hidden" name="uploaded_media_public_id" id="uploadedMediaPublicId">
+                                <input type="hidden" name="uploaded_media_type" id="uploadedMediaType">
+                                <span class="counter" id="uploadStatus" role="status" aria-live="polite"></span>
                                 <button type="button" class="btn" id="attachBtn">+ Photo / video</button>
                                 <span class="counter" id="mediaName"></span>
                                 <button type="button" class="text-btn" id="removeMediaBtn" hidden>Remove</button>
@@ -1117,35 +1121,136 @@
     const removeMediaBtn = document.getElementById("removeMediaBtn");
     const mediaName = document.getElementById("mediaName");
 
+    const uploadedMediaUrl = document.getElementById("uploadedMediaUrl");
+    const uploadedMediaPublicId = document.getElementById("uploadedMediaPublicId");
+    const uploadedMediaType = document.getElementById("uploadedMediaType");
+    const uploadStatus = document.getElementById("uploadStatus");
+    let uploadingPostMedia = false;
+
     function updatePostCounter() {
         const length = postBody.value.length;
-        const hasMedia = mediaInput.files.length > 0;
+        const hasMedia = mediaInput.files.length > 0 || Boolean(uploadedMediaUrl.value);
         counter.textContent = `${length} / 280`;
         counter.classList.toggle("over", length > 280);
-        postBtn.disabled = (!postBody.value.trim() && !hasMedia) || length > 280;
+        postBtn.disabled = uploadingPostMedia || ((!postBody.value.trim() && !hasMedia) || length > 280);
     }
     postBody.addEventListener("input", updatePostCounter);
     attachBtn.addEventListener("click", () => mediaInput.click());
     mediaInput.addEventListener("change", () => {
         const file = mediaInput.files[0];
+        uploadedMediaUrl.value = "";
+        uploadedMediaPublicId.value = "";
+        uploadedMediaType.value = "";
+        uploadStatus.textContent = "";
         mediaName.textContent = file ? `${file.name} (${(file.size / 1048576).toFixed(1)} MB)` : "";
         removeMediaBtn.hidden = !file;
         updatePostCounter();
     });
     removeMediaBtn.addEventListener("click", () => {
         mediaInput.value = "";
+        uploadedMediaUrl.value = "";
+        uploadedMediaPublicId.value = "";
+        uploadedMediaType.value = "";
         mediaName.textContent = "";
+        uploadStatus.textContent = "";
         removeMediaBtn.hidden = true;
         updatePostCounter();
     });
-    postForm.addEventListener("submit", event => {
-        if ((!postBody.value.trim() && !mediaInput.files.length) || postBody.value.length > 280) {
-            event.preventDefault();
+
+    function uploadPostMedia(file) {
+        return new Promise(async (resolve, reject) => {
+            const isVideo = file.type.startsWith("video/");
+            const resourceType = isVideo ? "video" : "image";
+            const maxBytes = isVideo ? 1024 * 1024 * 1024 : 15 * 1024 * 1024;
+            if ((!isVideo && !file.type.startsWith("image/")) || file.size > maxBytes) {
+                reject(new Error(isVideo ? "Videos must be 1 GB or smaller." : "Choose a supported image up to 15 MB."));
+                return;
+            }
+            try {
+                uploadStatus.textContent = "Preparing secure upload…";
+                const csrfToken = postForm.querySelector('input[name="csrf_token"]').value;
+                const signResponse = await fetch("{{ url_for('post_upload_signature') }}", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json", "X-CSRFToken": csrfToken},
+                    body: JSON.stringify({resource_type: resourceType})
+                });
+                const signed = await signResponse.json();
+                if (!signResponse.ok) throw new Error(signed.error || "Could not authorize media upload.");
+
+                const data = new FormData();
+                data.append("file", file);
+                data.append("api_key", signed.api_key);
+                data.append("timestamp", signed.timestamp);
+                data.append("folder", signed.folder);
+                data.append("public_id", signed.public_id);
+                data.append("overwrite", "false");
+                data.append("unique_filename", "false");
+                data.append("signature", signed.signature);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", `https://api.cloudinary.com/v1_1/${signed.cloud_name}/${signed.resource_type}/upload`);
+                xhr.upload.onprogress = event => {
+                    if (event.lengthComputable) {
+                        uploadStatus.textContent = `Uploading ${Math.round(event.loaded / event.total * 100)}%`;
+                    }
+                };
+                xhr.onerror = () => reject(new Error("Upload connection failed. Please try again."));
+                xhr.onload = () => {
+                    let result = {};
+                    try { result = JSON.parse(xhr.responseText); } catch (_) {}
+                    if (xhr.status < 200 || xhr.status >= 300) {
+                        reject(new Error(result.error?.message || "Cloudinary upload failed."));
+                        return;
+                    }
+                    resolve(result);
+                };
+                xhr.send(data);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    postForm.addEventListener("submit", async event => {
+        if (postForm.dataset.readyToPublish === "true") return;
+        event.preventDefault();
+        if ((!postBody.value.trim() && !mediaInput.files.length && !uploadedMediaUrl.value) || postBody.value.length > 280) {
             updatePostCounter();
             return;
         }
+        const file = mediaInput.files[0];
+        if (!file) {
+            postBtn.disabled = true;
+            postBtn.textContent = "Publishing...";
+            postForm.dataset.readyToPublish = "true";
+            postForm.submit();
+            return;
+        }
+        uploadingPostMedia = true;
         postBtn.disabled = true;
-        postBtn.textContent = "Publishing...";
+        attachBtn.disabled = true;
+        removeMediaBtn.disabled = true;
+        postBtn.textContent = "Uploading…";
+        try {
+            const result = await uploadPostMedia(file);
+            uploadedMediaUrl.value = result.secure_url || "";
+            uploadedMediaPublicId.value = result.public_id || "";
+            uploadedMediaType.value = result.resource_type || (file.type.startsWith("video/") ? "video" : "image");
+            if (!uploadedMediaUrl.value || !uploadedMediaPublicId.value) throw new Error("Upload finished without a valid media URL.");
+            // Remove the binary file from the form so Vercel receives only small text fields.
+            mediaInput.value = "";
+            uploadStatus.textContent = "Upload complete. Publishing post…";
+            postBtn.textContent = "Publishing...";
+            postForm.dataset.readyToPublish = "true";
+            postForm.submit();
+        } catch (error) {
+            uploadStatus.textContent = error.message || "Upload failed. Please try again.";
+            postBtn.textContent = "Post";
+            attachBtn.disabled = false;
+            removeMediaBtn.disabled = false;
+            uploadingPostMedia = false;
+            updatePostCounter();
+        }
     });
     updatePostCounter();
 
