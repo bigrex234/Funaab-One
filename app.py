@@ -411,6 +411,7 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     body = db.Column(db.String(2000), nullable=False, default="")
     image_url = db.Column(db.String(500), nullable=True)
+    audio_url = db.Column(db.String(500), nullable=True)
     reply_to_message_id = db.Column(db.Integer, db.ForeignKey("message.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
     conversation = db.relationship("Conversation", back_populates="messages")
@@ -1954,11 +1955,13 @@ def conversation_view(conversation_id):
     if request.method == "POST":
         body = request.form.get("body", "").strip()
         image_file = request.files.get("image")
+        audio_file = request.files.get("audio")
         image_url = None
+        audio_url = None
         if len(body) > 2000:
             flash("Messages must be 2,000 characters or fewer.", "error")
-        elif not body and not (image_file and image_file.filename):
-            flash("Write a message or attach an image first.", "error")
+        elif not body and not ((image_file and image_file.filename) or (audio_file and audio_file.filename)):
+            flash("Write a message or attach an image or voice note first.", "error")
         else:
             try:
                 if image_file and image_file.filename:
@@ -1979,6 +1982,25 @@ def conversation_view(conversation_id):
                     image_url = upload_media_to_cloudinary(io.BytesIO(data), resource_type="image", folder="funaab-one/messages")
                     if not image_url:
                         raise ValueError("The image could not be uploaded. Please try again.")
+                if audio_file and audio_file.filename:
+                    # Keep audio small enough to pass safely through the serverless request.
+                    audio_data = audio_file.stream.read(2 * 1024 * 1024 + 1)
+                    if not audio_data or len(audio_data) > 2 * 1024 * 1024:
+                        raise ValueError("Voice notes must be 2 MB or smaller. Please record a shorter note.")
+                    audio_type = audio_file.mimetype or ""
+                    valid_audio = (
+                        audio_data.startswith(b"RIFF") and audio_data[8:12] == b"WAVE"
+                        or audio_data.startswith(b"OggS")
+                        or audio_data.startswith(bytes.fromhex("1a45dfa3"))
+                        or audio_data[4:8] == b"ftyp"
+                    )
+                    if not valid_audio or audio_type not in ("audio/webm", "audio/ogg", "audio/mp4", "audio/wav", "audio/x-wav", "video/webm", "video/mp4", "application/octet-stream"):
+                        raise ValueError("The voice note format is not supported. Please record again using your browser's default format.")
+                    if not CLOUDINARY_ENABLED:
+                        raise ValueError("Voice notes are temporarily unavailable. Please try again later.")
+                    audio_url = upload_media_to_cloudinary(io.BytesIO(audio_data), resource_type="video", folder="funaab-one/messages/audio")
+                    if not audio_url:
+                        raise ValueError("The voice note could not be uploaded. Please try again.")
                 reply_to_raw = request.form.get("reply_to_message_id", "").strip()
                 reply_to_message = None
                 if reply_to_raw:
@@ -1990,7 +2012,7 @@ def conversation_view(conversation_id):
                     if reply_to_message is None or reply_to_message.conversation_id != conversation.id:
                         raise ValueError("That message can no longer be replied to.")
                 db.session.add(Message(conversation_id=conversation.id, sender_id=current_user.id, body=body,
-                                       image_url=image_url, reply_to_message_id=reply_to_message.id if reply_to_message else None))
+                                       image_url=image_url, audio_url=audio_url, reply_to_message_id=reply_to_message.id if reply_to_message else None))
                 for member in conversation.members:
                     if member.user_id != current_user.id:
                         create_notification(member.user_id, current_user.id, "message", "conversation",
@@ -2134,7 +2156,7 @@ def poll_messages(conversation_id):
         "id": m.id, "sender_id": m.sender_id, "sender_name": m.sender.full_name,
         "username": m.sender.username, "avatar": m.sender.profile_picture,
         "initial": (m.sender.full_name or m.sender.username)[:1].upper(),
-        "body": m.body, "image_url": m.image_url, "created_at": m.created_at.strftime("%b %d, %H:%M"),
+        "body": m.body, "image_url": m.image_url, "audio_url": m.audio_url, "created_at": m.created_at.strftime("%b %d, %H:%M"),
         "reply_to": ({"id": m.reply_to.id, "sender_name": m.reply_to.sender.full_name,
                       "body": m.reply_to.body or ("📷 Image" if m.reply_to.image_url else "Message")}
                      if m.reply_to and m.reply_to.conversation_id == conversation_id else None),
