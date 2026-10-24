@@ -1428,6 +1428,21 @@ def dashboard():
     stories_by_user = {}
     for story in active_stories:
         stories_by_user.setdefault(story.user_id, []).append(story)
+    # Fetch all of the current user's story views in one query instead of
+    # issuing a separate database query for every story (N+1 query pattern).
+    other_story_ids = [
+        story.id for story in active_stories
+        if story.user_id != current_user.id
+    ]
+    seen_story_ids = set()
+    if other_story_ids:
+        seen_story_ids = set(db.session.scalars(
+            select(StoryView.story_id).where(
+                StoryView.viewer_id == current_user.id,
+                StoryView.story_id.in_(other_story_ids),
+            )
+        ).all())
+
     story_groups = []
     for owner_id, owner_stories in stories_by_user.items():
         owner = owner_stories[0].author
@@ -1439,11 +1454,7 @@ def dashboard():
             "is_mine": owner_id == current_user.id,
             "stories": owner_stories,
             "unseen": any(
-                not db.session.scalar(select(StoryView.id).where(
-                    StoryView.story_id == item.id,
-                    StoryView.viewer_id == current_user.id
-                ))
-                for item in owner_stories if owner_id != current_user.id
+                item.id not in seen_story_ids for item in owner_stories
             ) if owner_id != current_user.id else False,
         })
     story_groups.sort(key=lambda group: (not group["is_mine"], not group["unseen"], group["name"].lower()))
@@ -3037,6 +3048,7 @@ def toggle_like(post_id):
     try:
         if existing:
             db.session.delete(existing)
+            liked = False
         else:
             db.session.add(
                 PostLike(
@@ -3044,16 +3056,32 @@ def toggle_like(post_id):
                     user_id=current_user.id,
                 )
             )
-            create_notification(post.user_id, current_user.id, "like", "post", post.id)
+            liked = True
+            if post.user_id != current_user.id:
+                create_notification(post.user_id, current_user.id, "like", "post", post.id)
 
         db.session.commit()
 
+        # AJAX clients receive the updated state and can update the feed in place.
+        # Normal form submissions retain the existing redirect behaviour.
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+            like_count = db.session.scalar(
+                select(db.func.count()).select_from(PostLike).where(
+                    PostLike.post_id == post_id
+                )
+            ) or 0
+            return {"ok": True, "liked": liked, "like_count": like_count, "post_id": post_id}
+
     except IntegrityError:
         db.session.rollback()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+            return {"ok": False, "error": "Like state changed. Please try again."}, 409
 
     except SQLAlchemyError:
         db.session.rollback()
         app.logger.exception("Like action failed")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+            return {"ok": False, "error": "Could not update your like. Please try again."}, 500
         flash("Could not update your like. Please try again.", "error")
 
     return dashboard_redirect()
