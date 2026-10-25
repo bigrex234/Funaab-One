@@ -653,6 +653,25 @@ class MarketListing(db.Model):
     seller = db.relationship("User", foreign_keys=[user_id])
 
 
+class AcademicMaterial(db.Model):
+    """Student-shared course notes and academic documents."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = db.Column(db.String(160), nullable=False, index=True)
+    course_code = db.Column(db.String(40), nullable=False, index=True)
+    course_name = db.Column(db.String(160), nullable=False, default="")
+    department = db.Column(db.String(120), nullable=False, index=True)
+    level = db.Column(db.String(3), nullable=False, index=True)
+    description = db.Column(db.String(1200), nullable=False, default="")
+    original_filename = db.Column(db.String(255), nullable=False)
+    file_url = db.Column(db.String(1000), nullable=False)
+    file_extension = db.Column(db.String(12), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False, default=0)
+    downloads = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+    uploader = db.relationship("User", foreign_keys=[user_id])
+
+
 # ==================================================
 # HELPERS
 # ==================================================
@@ -1091,6 +1110,127 @@ def save_market_image(file_storage):
     destination = UPLOAD_DIR / filename
     destination.write_bytes(data)
     return url_for("static", filename=f"uploads/{filename}")
+
+
+ACADEMIC_ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt", ".rtf"}
+ACADEMIC_MAX_BYTES = 3 * 1024 * 1024
+
+
+def _valid_academic_document(data, extension):
+    if extension == ".pdf":
+        return data.startswith(b"%PDF-")
+    if extension in {".doc", ".xls"}:
+        return data.startswith(bytes.fromhex("D0CF11E0A1B11AE1"))
+    if extension in {".docx", ".pptx", ".xlsx"}:
+        return data.startswith(b"PK\x03\x04")
+    if extension == ".ppt":
+        return data.startswith(bytes.fromhex("D0CF11E0A1B11AE1"))
+    if extension == ".txt":
+        try:
+            data[:4096].decode("utf-8")
+            return True
+        except UnicodeDecodeError:
+            return False
+    if extension == ".rtf":
+        return data.lstrip().startswith(b"{\\rtf")
+    return False
+
+
+@app.route("/academics", methods=["GET", "POST"])
+@login_required
+def academics():
+    query = request.args.get("q", "").strip()[:100]
+    department_filter = request.args.get("department", "").strip()[:120]
+    level_filter = request.args.get("level", "").strip()
+    if level_filter not in {"100", "200", "300", "400", "500", "600"}:
+        level_filter = ""
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        course_code = request.form.get("course_code", "").strip().upper()
+        course_name = request.form.get("course_name", "").strip()
+        department = request.form.get("department", "").strip()
+        level = request.form.get("level", "").strip()
+        description = request.form.get("description", "").strip()
+        uploaded = request.files.get("document")
+        if not title or len(title) > 160 or not course_code or len(course_code) > 40:
+            flash("Add a title and a valid course code.", "error")
+        elif len(course_name) > 160 or len(description) > 1200:
+            flash("Course name or description is too long.", "error")
+        elif not department or len(department) > 120 or level not in {"100", "200", "300", "400", "500", "600"}:
+            flash("Choose a department and academic level.", "error")
+        elif not uploaded or not uploaded.filename:
+            flash("Choose a PDF or supported document to upload.", "error")
+        else:
+            filename = Path(uploaded.filename).name
+            extension = Path(filename).suffix.lower()
+            try:
+                if extension not in ACADEMIC_ALLOWED_EXTENSIONS:
+                    raise ValueError("Supported files: PDF, DOC/DOCX, PPT/PPTX, XLS/XLSX, TXT and RTF.")
+                data = uploaded.stream.read(ACADEMIC_MAX_BYTES + 1)
+                if not data or len(data) > ACADEMIC_MAX_BYTES:
+                    raise ValueError("Academic files must be 3 MB or smaller for this upload flow.")
+                if not _valid_academic_document(data, extension):
+                    raise ValueError("The file content does not match the selected document type.")
+                if not CLOUDINARY_ENABLED:
+                    raise ValueError("Academic uploads are unavailable until Cloudinary is configured.")
+                result = cloudinary.uploader.upload(
+                    io.BytesIO(data), resource_type="raw", folder="funaab-one/academic-materials",
+                    public_id=f"{uuid.uuid4().hex}_{Path(filename).stem[:60]}",
+                    use_filename=False, unique_filename=False, overwrite=False,
+                    filename_override=filename,
+                )
+                file_url = result.get("secure_url")
+                if not file_url:
+                    raise ValueError("The document upload did not return a download link.")
+                material = AcademicMaterial(
+                    user_id=current_user.id, title=title, course_code=course_code,
+                    course_name=course_name, department=department, level=level,
+                    description=description, original_filename=filename,
+                    file_url=file_url, file_extension=extension,
+                    file_size=len(data), downloads=0,
+                )
+                db.session.add(material)
+                db.session.commit()
+                flash("Academic material uploaded successfully.", "success")
+                return redirect(url_for("academics"))
+            except ValueError as exc:
+                db.session.rollback()
+                flash(str(exc), "error")
+            except Exception:
+                db.session.rollback()
+                app.logger.exception("Academic material upload failed")
+                flash("Could not upload this document. Please try again.", "error")
+
+    statement = select(AcademicMaterial)
+    if query:
+        pattern = f"%{query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')}%"
+        statement = statement.where(or_(
+            AcademicMaterial.title.ilike(pattern, escape="\\"),
+            AcademicMaterial.course_code.ilike(pattern, escape="\\"),
+            AcademicMaterial.course_name.ilike(pattern, escape="\\"),
+            AcademicMaterial.description.ilike(pattern, escape="\\"),
+            AcademicMaterial.department.ilike(pattern, escape="\\"),
+        ))
+    if department_filter:
+        statement = statement.where(AcademicMaterial.department == department_filter)
+    if level_filter:
+        statement = statement.where(AcademicMaterial.level == level_filter)
+    materials = db.session.scalars(statement.order_by(AcademicMaterial.created_at.desc()).limit(200)).all()
+    departments = db.session.scalars(select(User.department).distinct().order_by(User.department)).all()
+    return render_template("academics.html", materials=materials, query=query,
+                           department_filter=department_filter, level_filter=level_filter,
+                           departments=[d for d in departments if d], student=current_user)
+
+
+@app.route("/academics/<int:material_id>/download")
+@login_required
+def download_academic_material(material_id):
+    material = db.session.get(AcademicMaterial, material_id)
+    if material is None:
+        abort(404)
+    material.downloads += 1
+    db.session.commit()
+    return redirect(material.file_url, code=302)
 
 
 @app.route("/marketplace", methods=["GET", "POST"])
