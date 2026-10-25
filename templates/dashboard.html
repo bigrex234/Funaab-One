@@ -750,6 +750,54 @@
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; }
         }
+
+        /* FUNAAB ONE custom feed video player */
+        .post-media:has(> .f1-video-shell) { background:#050907; border:1px solid rgba(46,229,157,.18); border-radius:18px; box-shadow:0 16px 42px rgba(0,0,0,.22); }
+        .f1-video-shell { position:relative; isolation:isolate; width:100%; overflow:hidden; background:#050907; border-radius:17px; color:#f4fff9; --player-accent:#2ee59d; }
+        .f1-video-shell video { display:block; width:100%; height:auto; max-height:76vh; object-fit:contain; background:#050907; margin:0 auto; cursor:pointer; }
+        .f1-video-shell:fullscreen { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; border-radius:0; }
+        .f1-video-shell:fullscreen video { max-height:100vh; width:100%; height:100%; object-fit:contain; }
+        .f1-video-shell .f1-vignette { position:absolute; inset:0; pointer-events:none; background:linear-gradient(0deg,rgba(0,0,0,.82) 0%,rgba(0,0,0,.22) 19%,transparent 42%,transparent 65%,rgba(0,0,0,.12) 100%); opacity:1; transition:opacity .25s ease; }
+        .f1-video-shell.is-playing:not(.show-controls) .f1-vignette { opacity:0; }
+        .f1-video-shell .f1-center-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(.94); display:grid; place-items:center; width:70px; height:70px; border:1px solid rgba(255,255,255,.32); border-radius:50%; color:#062117; background:rgba(46,229,157,.94); box-shadow:0 8px 32px rgba(0,0,0,.38),0 0 0 8px rgba(46,229,157,.12); cursor:pointer; opacity:0; pointer-events:none; transition:opacity .18s ease,transform .18s ease; backdrop-filter:blur(12px); }
+        .f1-video-shell:not(.is-playing) .f1-center-play { opacity:1; transform:translate(-50%,-50%) scale(1); pointer-events:auto; }
+        .f1-video-shell .f1-center-play svg { width:27px;height:27px;fill:currentColor; }
+        .f1-video-shell .f1-controls { position:absolute; z-index:3; left:0; right:0; bottom:0; padding:34px 16px 13px; display:flex; flex-direction:column; gap:9px; background:linear-gradient(0deg,rgba(0,0,0,.88),rgba(0,0,0,.48) 62%,transparent); opacity:1; transition:opacity .22s ease; }
+        .f1-video-shell.is-playing:not(.show-controls) .f1-controls { opacity:0; pointer-events:none; }
+        .f1-video-shell .f1-progress-wrap { position:relative; height:5px; display:flex; align-items:center; cursor:pointer; touch-action:pan-y; }
+        .f1-video-shell .f1-progress-track,.f1-video-shell .f1-buffered,.f1-video-shell .f1-progress-fill { position:absolute; left:0; height:4px; border-radius:99px; }
+        .f1-video-shell .f1-progress-track { width:100%; background:rgba(255,255,255,.28); }
+        .f1-video-shell .f1-buffered { background:rgba(255,255,255,.42); width:0; }
+        .f1-video-shell .f1-progress-fill { background:var(--player-accent); width:0; box-shadow:0 0 12px rgba(46,229,157,.55); }
+        .f1-video-shell .f1-progress-thumb { position:absolute; left:0; top:50%; width:11px;height:11px;border-radius:50%;background:#fff;transform:translate(-50%,-50%) scale(0);box-shadow:0 0 0 3px rgba(46,229,157,.25);transition:transform .12s ease; }
+        .f1-video-shell .f1-progress-wrap:hover .f1-progress-thumb,.f1-video-shell .f1-progress-wrap:focus-visible .f1-progress-thumb { transform:translate(-50%,-50%) scale(1); }
+        .f1-video-shell .f1-control-row { display:flex; align-items:center; gap:12px; min-height:31px; }
+        .f1-video-shell .f1-control-spacer { flex:1; }
+        .f1-video-shell .f1-control-btn { width:34px;height:34px; flex:0 0 auto; display:grid;place-items:center;padding:0;border:0;border-radius:11px;background:transparent;color:#f4fff9;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease; }
+        .f1-video-shell .f1-control-btn:hover,.f1-video-shell .f1-control-btn:focus-visible { background:rgba(255,255,255,.13); color:var(--player-accent); outline:none; }
+        .f1-video-shell .f1-control-btn:active { transform:scale(.92); }
+        .f1-video-shell .f1-control-btn svg { width:20px;height:20px;fill:currentColor; }
+        .f1-video-shell .f1-time { color:rgba(255,255,255,.92);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.01em; }
+        .f1-video-shell .f1-volume { width:0; opacity:0; overflow:hidden; transition:width .2s ease,opacity .2s ease; display:flex; align-items:center; }
+        .f1-video-shell .f1-volume-area:hover .f1-volume,.f1-video-shell .f1-volume-area:focus-within .f1-volume { width:76px;opacity:1; }
+        .f1-video-shell .f1-volume input { width:70px;height:4px;accent-color:var(--player-accent);cursor:pointer; }
+        .f1-video-shell .f1-settings-menu { position:absolute;right:54px;bottom:58px;z-index:5;padding:8px;min-width:145px;border:1px solid rgba(255,255,255,.14);border-radius:13px;background:rgba(9,20,15,.96);box-shadow:0 14px 38px rgba(0,0,0,.42);backdrop-filter:blur(18px); }
+        .f1-video-shell .f1-settings-menu button { width:100%;padding:9px 10px;text-align:left;border:0;border-radius:8px;background:transparent;color:#f4fff9;font-size:12px; }
+        .f1-video-shell .f1-settings-menu button:hover { background:rgba(46,229,157,.14);color:#2ee59d; }
+        .f1-video-shell .f1-settings-menu button[aria-checked="true"]::after { content:" ✓";color:#2ee59d; }
+        .f1-video-shell .f1-control-btn:focus-visible,.f1-video-shell .f1-center-play:focus-visible { outline:2px solid var(--player-accent);outline-offset:3px; }
+        .f1-video-shell .f1-video-error { position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;color:#fff;background:rgba(0,0,0,.72);font-size:13px; }
+        @media (max-width:600px) {
+          .f1-video-shell video { max-height:68vh; }
+          .f1-video-shell .f1-controls { padding:28px 10px 9px;gap:7px; }
+          .f1-video-shell .f1-control-row { gap:5px; }
+          .f1-video-shell .f1-control-btn { width:32px;height:32px; }
+          .f1-video-shell .f1-volume-area:hover .f1-volume,.f1-video-shell .f1-volume-area:focus-within .f1-volume { width:55px; }
+          .f1-video-shell .f1-volume input { width:50px; }
+          .f1-video-shell .f1-center-play { width:58px;height:58px; }
+        }
+        @media (prefers-reduced-motion:reduce) { .f1-video-shell * { transition:none!important; } }
+
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
 </head>
@@ -1073,7 +1121,7 @@
                                     <div class="post-media">
                                         {% if post.media_type == 'video' %}
                                             {% set poster_url = post.media_url[:-4] ~ '.jpg' if post.media_url.endswith('.mp4') else '' %}
-                                            <video controls playsinline preload="none"
+                                            <video class="f1-custom-video" playsinline preload="metadata"
                                                    {% if poster_url %}poster="{{ poster_url }}"{% endif %}>
                                                 <source src="{{ post.media_url }}" type="video/mp4">
                                                 Your browser does not support this video.
@@ -1865,6 +1913,78 @@
   document.getElementById('storyPrev')?.addEventListener('click', prevStory);
   viewer?.querySelectorAll('[data-close-story-viewer]').forEach(el => el.addEventListener('click', closeViewer));
   document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeCreator(); closeViewer(); } });
+})();
+</script>
+
+
+<script>
+(() => {
+  const icons = {
+    play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5c0-.8.9-1.3 1.6-.8l10 6.5a1 1 0 0 1 0 1.6l-10 6.5c-.7.5-1.6 0-1.6-.8z"/></svg>',
+    pause:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4.5v14H6zM13.5 5H18v14h-4.5z"/></svg>',
+    volume:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm12.5-.8v7.6a4.5 4.5 0 0 0 0-7.6zm0-4v2.2a7 7 0 0 1 0 13.2v2.2a9.2 9.2 0 0 0 0-17.6z"/></svg>',
+    mute:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.6 0-1.4 1.4 2.1 2.1-2.1 2.1 1.4 1.4 2.1-2.1 2.1 2.1 1.4-1.4-2.1-2.1 2.1-2.1-1.4-1.4-2.1 2.1z"/></svg>',
+    fullscreen:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>',
+    settings:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.5-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 3.1a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.5a7.7 7.7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-3.1a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>'
+  };
+  const fmt = n => { if (!Number.isFinite(n)) return '0:00'; n=Math.max(0,Math.floor(n)); return Math.floor(n/60)+':'+String(n%60).padStart(2,'0'); };
+  function setup(video) {
+    if (video.dataset.f1PlayerReady) return;
+    video.dataset.f1PlayerReady='1'; video.controls=false;
+    const shell=document.createElement('div'); shell.className='f1-video-shell show-controls';
+    video.parentNode.insertBefore(shell,video); shell.appendChild(video);
+    const vignette=document.createElement('div'); vignette.className='f1-vignette'; shell.appendChild(vignette);
+    const center=document.createElement('button'); center.className='f1-center-play'; center.type='button'; center.setAttribute('aria-label','Play video'); center.innerHTML=icons.play; shell.appendChild(center);
+    const controls=document.createElement('div'); controls.className='f1-controls'; controls.innerHTML=`
+      <div class="f1-progress-wrap" role="slider" tabindex="0" aria-label="Video progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="f1-progress-track"></div><div class="f1-buffered"></div><div class="f1-progress-fill"></div><div class="f1-progress-thumb"></div>
+      </div>
+      <div class="f1-control-row">
+        <button class="f1-control-btn f1-play" type="button" aria-label="Play">${icons.play}</button>
+        <span class="f1-time f1-current">0:00</span><span class="f1-time">/</span><span class="f1-time f1-duration">0:00</span>
+        <span class="f1-control-spacer"></span>
+        <div class="f1-volume-area" style="display:flex;align-items:center;gap:2px">
+          <button class="f1-control-btn f1-mute" type="button" aria-label="Mute">${icons.volume}</button>
+          <div class="f1-volume"><input aria-label="Volume" type="range" min="0" max="1" step=".05" value="${video.volume}"></div>
+        </div>
+        <button class="f1-control-btn f1-settings" type="button" aria-label="Playback settings">${icons.settings}</button>
+        <button class="f1-control-btn f1-fullscreen" type="button" aria-label="Enter fullscreen">${icons.fullscreen}</button>
+      </div>`;
+    shell.appendChild(controls);
+    const progress=controls.querySelector('.f1-progress-wrap'), fill=controls.querySelector('.f1-progress-fill'), buffered=controls.querySelector('.f1-buffered'), thumb=controls.querySelector('.f1-progress-thumb'), current=controls.querySelector('.f1-current'), duration=controls.querySelector('.f1-duration'), play=controls.querySelector('.f1-play'), mute=controls.querySelector('.f1-mute'), volume=controls.querySelector('input[type=range]');
+    let hideTimer=null, wasPlayingBeforeScrub=false;
+    const show=()=>{shell.classList.add('show-controls');clearTimeout(hideTimer);if(!video.paused)hideTimer=setTimeout(()=>shell.classList.remove('show-controls'),2300);};
+    const toggle=()=>{ if(video.paused) video.play().catch(()=>{}); else video.pause(); };
+    const syncPlay=()=>{const playing=!video.paused; shell.classList.toggle('is-playing',playing); play.innerHTML=playing?icons.pause:icons.play; play.setAttribute('aria-label',playing?'Pause':'Play');center.setAttribute('aria-label',playing?'Pause video':'Play video');center.innerHTML=playing?icons.pause:icons.play; if(playing)show();else {shell.classList.add('show-controls');clearTimeout(hideTimer);} };
+    const syncVolume=()=>{mute.innerHTML=(video.muted||video.volume===0)?icons.mute:icons.volume;mute.setAttribute('aria-label',(video.muted||video.volume===0)?'Unmute':'Mute');volume.value=video.muted?0:video.volume;};
+    const update=()=>{const d=video.duration||0,p=d?video.currentTime/d*100:0;fill.style.width=p+'%';thumb.style.left=p+'%';current.textContent=fmt(video.currentTime);duration.textContent=fmt(d);progress.setAttribute('aria-valuenow',String(Math.round(p)));let b=0;try{if(video.buffered.length&&d)b=video.buffered.end(video.buffered.length-1)/d*100;}catch(e){}buffered.style.width=b+'%';};
+    const seek=e=>{const r=progress.getBoundingClientRect(),pct=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));if(video.duration)video.currentTime=pct*video.duration;};
+    play.addEventListener('click',toggle);center.addEventListener('click',toggle);video.addEventListener('click',()=>{toggle();show();});
+    video.addEventListener('play',syncPlay);video.addEventListener('pause',syncPlay);video.addEventListener('timeupdate',update);video.addEventListener('durationchange',update);video.addEventListener('progress',update);video.addEventListener('loadedmetadata',update);video.addEventListener('volumechange',syncVolume);
+    shell.addEventListener('mousemove',show);shell.addEventListener('touchstart',show,{passive:true});shell.addEventListener('mouseleave',()=>{if(!video.paused){clearTimeout(hideTimer);hideTimer=setTimeout(()=>shell.classList.remove('show-controls'),800);}});
+    progress.addEventListener('pointerdown',e=>{wasPlayingBeforeScrub=!video.paused;progress.setPointerCapture?.(e.pointerId);seek(e);});
+    progress.addEventListener('pointermove',e=>{if(e.buttons&&e.pointerType!=='touch')seek(e);});
+    progress.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();video.currentTime=Math.max(0,Math.min(video.duration||0,video.currentTime+(e.key==='ArrowRight'?5:-5)));}});
+    mute.addEventListener('click',()=>{video.muted=!video.muted;if(!video.muted&&video.volume===0)video.volume=.65;syncVolume();});
+    volume.addEventListener('input',()=>{video.volume=Number(volume.value);video.muted=video.volume===0;syncVolume();});
+    controls.querySelector('.f1-fullscreen').addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen?.();else shell.requestFullscreen?.();});
+    const settings=controls.querySelector('.f1-settings');
+    settings.addEventListener('click',()=>{
+      let menu=shell.querySelector('.f1-settings-menu');
+      if(menu){menu.remove();return;}
+      menu=document.createElement('div');menu.className='f1-settings-menu';menu.setAttribute('role','menu');
+      const rates=[.5,.75,1,1.25,1.5,2];
+      rates.forEach(rate=>{const b=document.createElement('button');b.type='button';b.textContent=(rate===1?'Normal':rate+'×');b.setAttribute('role','menuitemradio');b.setAttribute('aria-checked',String(video.playbackRate===rate));b.addEventListener('click',()=>{video.playbackRate=rate;menu.remove();show();});menu.appendChild(b);});
+      shell.appendChild(menu);
+    });
+    video.addEventListener('error',()=>{if(video.error){const err=document.createElement('div');err.className='f1-video-error';err.textContent='This video could not be loaded. Please try again.';shell.appendChild(err);}});
+    document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement===shell)shell.classList.add('show-controls');});
+    syncPlay();syncVolume();update();
+  }
+  function init(){document.querySelectorAll('.post-media video.f1-custom-video').forEach(setup);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  // Support feed cards inserted later by AJAX.
+  new MutationObserver(mutations=>mutations.forEach(m=>m.addedNodes.forEach(node=>{if(node.nodeType===1){if(node.matches?.('.post-media video.f1-custom-video'))setup(node);node.querySelectorAll?.('.post-media video.f1-custom-video').forEach(setup);}}))).observe(document.body,{childList:true,subtree:true});
 })();
 </script>
 
