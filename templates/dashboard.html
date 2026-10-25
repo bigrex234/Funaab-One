@@ -809,6 +809,209 @@
 
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
+
+    <style id="funaab-premium-glass-overrides">
+      /* FUNAAB ONE · Emerald Glass UI refresh
+         CSS-only presentation layer: existing Flask/Jinja forms, routes and JS are preserved. */
+      :root {
+        --glass-line: rgba(132, 255, 194, .16);
+        --glass-highlight: rgba(255, 255, 255, .055);
+        --glass-shadow: 0 22px 65px rgba(0, 0, 0, .22);
+        --glass-blur: 22px;
+      }
+      [data-theme="light"] {
+        --glass-line: rgba(8, 125, 80, .16);
+        --glass-highlight: rgba(255, 255, 255, .78);
+        --glass-shadow: 0 22px 55px rgba(16, 72, 45, .09);
+      }
+      html { scroll-behavior: smooth; }
+      body {
+        background:
+          radial-gradient(ellipse at 68% -10%, rgba(46,229,157,.15), transparent 36%),
+          radial-gradient(ellipse at 8% 35%, rgba(16,185,129,.09), transparent 32%),
+          radial-gradient(ellipse at 90% 80%, rgba(20,184,166,.06), transparent 28%),
+          var(--bg);
+        background-attachment: fixed;
+      }
+      .sidebar {
+        background: color-mix(in srgb, var(--surface) 76%, transparent);
+        border-right: 1px solid var(--glass-line);
+        box-shadow: 12px 0 45px rgba(0,0,0,.08);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+      }
+      .brand { padding-top: 2px; }
+      .logo {
+        box-shadow: 0 0 0 5px color-mix(in srgb, var(--green) 10%, transparent),
+                    0 8px 24px color-mix(in srgb, var(--green) 22%, transparent);
+      }
+      .nav a, .nav .soon {
+        position: relative;
+        border: 1px solid transparent;
+        transition: background .2s ease, color .2s ease, border-color .2s ease,
+                    transform .2s ease;
+      }
+      .nav a:hover {
+        transform: translateX(2px);
+        border-color: color-mix(in srgb, var(--green) 20%, transparent);
+      }
+      .nav a.active {
+        background: linear-gradient(105deg,
+          color-mix(in srgb, var(--green) 16%, transparent),
+          color-mix(in srgb, var(--green) 5%, transparent));
+        border-color: color-mix(in srgb, var(--green) 20%, transparent);
+        box-shadow: inset 3px 0 0 var(--green);
+      }
+      .topbar {
+        background: color-mix(in srgb, var(--bg) 72%, transparent);
+        border-bottom: 1px solid var(--glass-line);
+        box-shadow: 0 10px 35px rgba(0,0,0,.08);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+      }
+      .topbar h1 { letter-spacing: -.04em; }
+      .content { max-width: 1380px; }
+      .card, .glass-panel {
+        background: linear-gradient(145deg,
+          color-mix(in srgb, var(--surface) 82%, var(--green) 8%),
+          color-mix(in srgb, var(--surface) 91%, transparent));
+        border: 1px solid var(--glass-line);
+        box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+      }
+      .card { border-radius: 20px; }
+      .stories-panel { position: relative; }
+      .stories-panel::after, .composer::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        background: linear-gradient(120deg, rgba(255,255,255,.035), transparent 38%);
+      }
+      .stories-heading h2 { letter-spacing: -.035em; }
+      .story-avatar-wrap { transition: transform .22s ease, filter .22s ease; }
+      .story-bubble:hover .story-avatar-wrap {
+        transform: translateY(-3px) scale(1.035);
+        filter: brightness(1.08);
+      }
+      .composer {
+        position: relative;
+        overflow: hidden;
+        border-radius: 22px;
+        background: linear-gradient(135deg,
+          color-mix(in srgb, var(--surface) 82%, var(--green) 9%),
+          color-mix(in srgb, var(--surface) 94%, transparent));
+      }
+      .composer textarea, .composer input[type="text"],
+      .comment-form input, .poll-options-editor input, .poll-deadline {
+        background: color-mix(in srgb, var(--bg) 68%, transparent);
+        border-color: color-mix(in srgb, var(--green) 17%, var(--border));
+        border-radius: 13px;
+      }
+      .composer textarea:focus, .composer input:focus,
+      .comment-form input:focus, .poll-options-editor input:focus {
+        outline: none;
+        border-color: var(--green);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 13%, transparent);
+      }
+      .btn {
+        border-color: color-mix(in srgb, var(--green) 15%, var(--border));
+        background: color-mix(in srgb, var(--surface2) 74%, transparent);
+        border-radius: 12px;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--green), color-mix(in srgb, var(--green) 75%, #B7FFE0));
+        box-shadow: 0 7px 22px color-mix(in srgb, var(--green) 18%, transparent);
+      }
+      .btn-primary:hover { filter: brightness(1.06); }
+      .post { transition: background .22s ease; }
+      .post:hover {
+        background: color-mix(in srgb, var(--green) 3.5%, transparent);
+      }
+      .post > .avatar, .comment-avatar, .profile-row .avatar {
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 9%, transparent);
+      }
+      .post-name { letter-spacing: -.02em; }
+      .post-media {
+        border-radius: 18px;
+        border-color: color-mix(in srgb, var(--green) 14%, var(--border));
+        box-shadow: 0 16px 38px rgba(0,0,0,.19);
+      }
+      .post-media img, .post-media video { border-radius: inherit; }
+      .post-stats { padding-bottom: 2px; }
+      .post-buttons {
+        border-top-color: color-mix(in srgb, var(--green) 13%, var(--border));
+      }
+      .action-btn {
+        border-radius: 12px;
+        transition: transform .16s ease, background .18s ease,
+                    border-color .18s ease, color .18s ease;
+      }
+      .action-btn:hover {
+        transform: translateY(-1px);
+        background: color-mix(in srgb, var(--green) 9%, var(--surface));
+        border-color: color-mix(in srgb, var(--green) 22%, transparent);
+      }
+      .action-btn:active { transform: scale(.97); }
+      .action-btn.liked, .action-btn.reposted {
+        background: color-mix(in srgb, var(--green) 13%, var(--surface));
+        border-color: color-mix(in srgb, var(--green) 23%, transparent);
+      }
+      .comments, .poll-card {
+        border: 1px solid color-mix(in srgb, var(--green) 13%, var(--border));
+        background: color-mix(in srgb, var(--bg) 58%, var(--surface));
+        border-radius: 16px;
+      }
+      .poll-choice {
+        transition: border-color .18s ease, background .18s ease, transform .18s ease;
+      }
+      .poll-choice:hover {
+        background: color-mix(in srgb, var(--green) 7%, transparent);
+        transform: translateX(2px);
+      }
+      .side-stack > .card {
+        background: linear-gradient(145deg,
+          color-mix(in srgb, var(--surface) 78%, var(--green) 7%),
+          color-mix(in srgb, var(--surface) 94%, transparent));
+      }
+      .chip {
+        background: color-mix(in srgb, var(--surface2) 52%, transparent);
+        border-color: color-mix(in srgb, var(--green) 15%, var(--border));
+      }
+      .sidebar-footer {
+        background: color-mix(in srgb, var(--surface2) 38%, transparent);
+        border-color: var(--glass-line);
+        border-radius: 15px;
+      }
+      :is(a, button, input, textarea, select, summary):focus-visible {
+        outline: 2px solid var(--green);
+        outline-offset: 3px;
+      }
+      @media (max-width: 850px) {
+        .content { padding-top: 18px; }
+        .side-stack > .card { border-radius: 17px; }
+      }
+      @media (max-width: 650px) {
+        body { background-attachment: scroll; }
+        .sidebar {
+          background: color-mix(in srgb, var(--surface) 91%, transparent);
+          backdrop-filter: blur(26px);
+          -webkit-backdrop-filter: blur(26px);
+        }
+        .topbar { padding-inline: 12px; }
+        .stories-panel, .composer, .layout > section > .card { border-radius: 17px; }
+        .post-media { border-radius: 14px; }
+        .post-buttons { justify-content: space-between; }
+        .action-btn { flex: 1 1 auto; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after { transition-duration: .01ms !important; }
+      }
+    </style>
+
 </head>
 
 <body>
