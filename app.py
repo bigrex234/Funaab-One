@@ -1675,7 +1675,10 @@ def edit_profile():
             except ValueError as exc:
                 errors.append(str(exc))
 
+        is_ajax_profile = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         if errors:
+            if is_ajax_profile:
+                return {"ok": False, "error": " ".join(errors)}, 400
             for error in errors:
                 flash(error, "error")
             return render_template("edit_profile.html", student=current_user), 400
@@ -1692,9 +1695,19 @@ def edit_profile():
         except SQLAlchemyError:
             db.session.rollback()
             app.logger.exception("Profile update failed")
+            if is_ajax_profile:
+                return {"ok": False, "error": "Could not save your profile. Please try again."}, 500
             flash("Could not save your profile. Please try again.", "error")
             return render_template("edit_profile.html", student=current_user), 500
 
+        if is_ajax_profile:
+            return {"ok": True, "message": "Profile updated successfully.",
+                    "full_name": current_user.full_name,
+                    "department": current_user.department,
+                    "level": current_user.level,
+                    "bio": current_user.bio or "",
+                    "profile_picture": current_user.profile_picture or "",
+                    "profile_url": url_for("profile", username=current_user.username)}
         flash("Your profile has been updated.", "success")
         return redirect(url_for("profile", username=current_user.username))
 
