@@ -13,12 +13,53 @@ label{display:block;font-weight:650;font-size:13px;margin:17px 0 7px}input,selec
 <header class="top"><a class="brand" href="{{ url_for('dashboard') }}">🌱 FUNAAB ONE</a><a class="btn" href="{{ url_for('profile', username=student.username) }}">Cancel</a></header>
 <section class="card"><h1>Edit your profile</h1><p class="muted">Keep your campus profile up to date.</p>
 {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category|e }}">{{ message }}</div>{% endfor %}{% endwith %}
-<div class="avatar">{% if student.profile_picture %}<img src="{{ student.profile_picture }}" alt="Current profile picture" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">{% else %}{{ (student.full_name or student.username)[:1]|upper }}{% endif %}</div>
-<form method="post" enctype="multipart/form-data">
+<div class="avatar" id="avatarPreview">{% if student.profile_picture %}<img src="{{ student.profile_picture }}" alt="Current profile picture" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">{% else %}{{ (student.full_name or student.username)[:1]|upper }}{% endif %}</div>
+<div id="profileStatus" class="flash" role="status" aria-live="polite" hidden></div>
+<form method="post" enctype="multipart/form-data" id="profileForm">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <label for="full_name">Full name</label><input id="full_name" name="full_name" maxlength="100" required value="{{ student.full_name }}">
 <label for="profile_picture">Profile picture (optional)</label><input id="profile_picture" name="profile_picture" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><p class="muted">JPG, PNG, WEBP, or GIF · Maximum 5 MB. Leave empty to keep your current picture.</p>
 <label for="department">Department</label><select id="department" name="department" required><option value="">Select department</option>{% for group,programmes in department_groups.items() %}<optgroup label="{{ group }}">{% for programme in programmes %}<option value="{{ programme }}" {% if student.department==programme %}selected{% endif %}>{{ programme }}</option>{% endfor %}</optgroup>{% endfor %}</select>
 <label for="level">Academic level</label><select id="level" name="level" required>{% for level in ['100','200','300','400','500','600'] %}<option value="{{ level }}" {% if student.level==level %}selected{% endif %}>{{ level }} Level</option>{% endfor %}</select>
 <label for="bio">Bio (optional)</label><textarea id="bio" name="bio" maxlength="300" placeholder="Tell campus a little about yourself…">{{ student.bio or '' }}</textarea><p class="muted">Up to 300 characters.</p>
-<button class="submit" type="submit">Save changes</button></form></section></main></body></html>
+<button class="submit" type="submit" id="saveProfile">Save changes</button></form></section></main>
+<script>
+(() => {
+  const form = document.getElementById('profileForm');
+  const status = document.getElementById('profileStatus');
+  const save = document.getElementById('saveProfile');
+  const fileInput = document.getElementById('profile_picture');
+  const avatar = document.getElementById('avatarPreview');
+  let previewUrl = null;
+  function showStatus(message, isError=false) {
+    status.hidden = false; status.textContent = message;
+    status.classList.toggle('error', isError); status.classList.toggle('success', !isError);
+  }
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showStatus('Choose a valid image file.', true); fileInput.value=''; return; }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+    avatar.replaceChildren();
+    const image = document.createElement('img'); image.src=previewUrl; image.alt='New profile picture preview';
+    image.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:inherit'; avatar.appendChild(image);
+  });
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    save.disabled = true; save.textContent = 'Saving…';
+    try {
+      const response = await fetch(form.action || location.href, {method:'POST', body:new FormData(form), headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}});
+      const result = await response.json().catch(() => ({ok:false,error:'Unexpected server response.'}));
+      if (!response.ok || !result.ok) { showStatus(result.error || 'Could not save your profile. Try again.', true); return; }
+      showStatus(result.message || 'Profile updated successfully.');
+      const currentName = document.getElementById('full_name').value.trim();
+      if (!fileInput.files.length && !avatar.querySelector('img')) avatar.textContent = (currentName || '?').slice(0,1).toUpperCase();
+      save.textContent = 'Saved ✓';
+      if (result.profile_picture && previewUrl) { /* Keep the local preview until navigation. */ }
+    } catch (error) { showStatus('Network error. Your changes were not confirmed; please try again.', true); }
+    finally { save.disabled = false; if (save.textContent === 'Saving…') save.textContent='Save changes'; }
+  });
+  window.addEventListener('beforeunload', () => { if (previewUrl) URL.revokeObjectURL(previewUrl); });
+})();
+</script></body></html>
