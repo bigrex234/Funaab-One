@@ -1,118 +1,59 @@
-/* FUNAAB ONE · Shared Liquid Glass UI
-   Progressive enhancement: visual-only rules, no route, data, or interaction changes. */
+/* FUNAAB ONE · Apple-inspired Liquid Glass System v3
+   Visual-only enhancement for non-dashboard templates. */
 :root {
-  --fo-bg: #030a07;
-  --fo-surface: rgba(12, 28, 21, .78);
-  --fo-surface-2: rgba(19, 43, 31, .76);
-  --fo-text: #ecf8f1;
-  --fo-muted: rgba(226, 246, 236, .62);
-  --fo-green: #35f0a4;
-  --fo-green-soft: #a8ffd6;
-  --fo-border: rgba(255,255,255,.12);
-  --fo-shadow: 0 24px 70px rgba(0,0,0,.26);
-  --fo-ease: cubic-bezier(.22,1,.36,1);
+  --fo-bg:#030a07; --fo-surface:rgba(12,28,21,.72); --fo-surface-2:rgba(19,43,31,.68);
+  --fo-text:#ecf8f1; --fo-muted:rgba(226,246,236,.66); --fo-green:#35f0a4;
+  --fo-green-soft:#a8ffd6; --fo-border:rgba(192,255,222,.15); --fo-hi:rgba(255,255,255,.11);
+  --fo-shadow:0 24px 70px rgba(0,0,0,.27); --fo-blur:blur(24px) saturate(165%);
+  --fo-ease:cubic-bezier(.22,1,.36,1); --fo-spring:cubic-bezier(.34,1.56,.64,1);
 }
-html { scroll-behavior:smooth; scroll-padding-top:24px; }
+html { scroll-behavior:smooth; scroll-padding-top:28px; }
+html,body { max-width:100%; }
 body {
-  background-color:var(--fo-bg, #030a07);
-  background-image:radial-gradient(ellipse at 78% -12%,rgba(53,240,164,.13),transparent 38%),radial-gradient(ellipse at 3% 48%,rgba(5,150,105,.075),transparent 32%);
-  background-attachment:fixed;
-  -webkit-font-smoothing:antialiased;
+  background-color:var(--fo-bg) !important;
+  background-image:radial-gradient(ellipse at 10% 0%,rgba(0,255,145,.16),transparent 34%),radial-gradient(ellipse at 90% 15%,rgba(53,240,164,.12),transparent 32%),radial-gradient(ellipse at 50% 100%,rgba(0,117,78,.13),transparent 40%) !important;
+  background-attachment:fixed; color:var(--fo-text); -webkit-font-smoothing:antialiased;
 }
+body::before { content:""; position:fixed; z-index:-1; inset:-15%; pointer-events:none; background:radial-gradient(circle at 20% 25%,rgba(53,240,164,.09),transparent 23%),radial-gradient(circle at 75% 55%,rgba(0,166,111,.08),transparent 25%); filter:blur(28px); animation:fo-aurora 22s ease-in-out infinite alternate; }
+@keyframes fo-aurora { 0%{transform:translate3d(-1.5%,0,0) scale(1)} 50%{transform:translate3d(1.5%,-1%,0) scale(1.04)} 100%{transform:translate3d(0,1.5%,0) scale(1.02)} }
+* { scrollbar-width:thin; scrollbar-color:rgba(53,240,164,.42) transparent; }
 button,a,input,textarea,select { -webkit-tap-highlight-color:transparent; }
 button,input,textarea,select { max-width:100%; }
-:where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.item,.empty,.hero-card,.auth-card,.form-card,.section-card,.result-card,.report-card) {
-  transition: border-color .28s ease, box-shadow .32s ease, background-color .28s ease, transform .32s var(--fo-ease);
+:where(header,.header,.topbar,.topline,.navbar,.nav,.sidebar,.dock,.profile-card,.cover,.preview,.preview-hero,.preview-stat,.preview-post,.highlight,.feature,.about-visual,.about-pill,.developer-card,.dev-tag,.cta-box,.card,.panel,.post,.post-card,.marketplace-card,.product-card,.listing-card,.community-card,.conversation-card,.message-card,.event-card,.notification-card,.material,.material-card,.item,.empty,.empty-state,.hero-card,.auth-card,.form-card,.section-card,.result-card,.report-card,.settings-card,.stat,.stats,.post-tabs,.tabs,.tab-bar,.filter-bar,.search-box,.search-panel,.modal-content,.modal-card,.dropdown-menu,.safety-actions,.flash,.flash-list,.preview,.about-pill) {
+  border-color:var(--fo-border) !important;
 }
-:where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.item,.auth-card,.form-card,.section-card,.result-card,.report-card) {
-  border-color:var(--fo-border, rgba(255,255,255,.12));
-  box-shadow:0 16px 44px rgba(0,0,0,.13),inset 0 1px rgba(255,255,255,.035);
+:where(.card,.panel,.post,.post-card,.profile-card,.marketplace-card,.product-card,.listing-card,.community-card,.conversation-card,.message-card,.event-card,.notification-card,.material,.material-card,.item,.empty,.empty-state,.hero-card,.auth-card,.form-card,.section-card,.result-card,.report-card,.settings-card,.preview,.preview-hero,.preview-stat,.preview-post,.highlight,.feature,.about-visual,.about-pill,.developer-card,.cta-box,.stat,.stats,.post-tabs,.tabs,.tab-bar,.filter-bar,.search-box,.search-panel,.modal-content,.modal-card,.dropdown-menu,.safety-actions,.flash) {
+  background-color:rgba(10,27,19,.70) !important; background-image:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.012)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.075),0 18px 48px rgba(0,0,0,.18) !important;
+  -webkit-backdrop-filter:var(--fo-blur); backdrop-filter:var(--fo-blur);
+  transition:transform .38s var(--fo-ease),border-color .3s ease,box-shadow .35s ease,background-color .3s ease !important;
 }
-@supports ((backdrop-filter:blur(12px)) or (-webkit-backdrop-filter:blur(12px))) {
-  :where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.auth-card,.form-card,.section-card,.result-card,.report-card) {
-    backdrop-filter:blur(18px) saturate(145%);
-    -webkit-backdrop-filter:blur(18px) saturate(145%);
-  }
+:where(.card,.panel,.post,.post-card,.profile-card,.marketplace-card,.product-card,.listing-card,.community-card,.conversation-card,.message-card,.event-card,.notification-card,.material,.material-card,.item,.feature,.about-pill,.developer-card,.stat):hover {
+  border-color:rgba(53,240,164,.34) !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 22px 58px rgba(0,0,0,.22),0 0 28px rgba(53,240,164,.045) !important;
 }
-/* Gentle entrance motion; avoids hiding content while fonts/images load. */
-@keyframes fo-rise-in { from { opacity:.01; transform:translate3d(0,12px,0); } to { opacity:1; transform:translate3d(0,0,0); } }
-@keyframes fo-glow-breathe { 0%,100% { box-shadow:0 0 0 rgba(53,240,164,0); } 50% { box-shadow:0 0 24px rgba(53,240,164,.10); } }
-main, .wrap, .shell, .layout, .page, .container { animation:fo-rise-in .55s var(--fo-ease) both; }
-:where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.auth-card,.form-card,.section-card,.result-card,.report-card):hover {
-  border-color:rgba(53,240,164,.25);
-  box-shadow:0 20px 52px rgba(0,0,0,.19),inset 0 1px rgba(255,255,255,.045);
-}
-:where(button,.btn,a.btn,input[type=submit],input[type=button]) {
-  transition:transform .22s var(--fo-ease),border-color .22s ease,box-shadow .25s ease,filter .22s ease;
-}
-:where(button,.btn,a.btn,input[type=submit],input[type=button]):hover { filter:brightness(1.06); }
-:where(button,.btn,a.btn,input[type=submit],input[type=button]):active { transform:scale(.975); }
-:where(.btn.primary,.primary,button[type=submit],input[type=submit]) { box-shadow:0 7px 24px rgba(53,240,164,.09); }
-:where(input:not([type=checkbox]):not([type=radio]):not([type=submit]),textarea,select) {
-  transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease;
-}
-:where(input,textarea,select):focus-visible,button:focus-visible,a:focus-visible {
-  outline:2px solid rgba(53,240,164,.78); outline-offset:3px;
-}
+:where(button,.btn,.button,input[type=submit],input[type=button],.theme-btn,.menu-btn,.post-tab,.tab,.nav a,.nav-links a,.sidebar a) { transition:transform .28s var(--fo-spring),background .28s ease,color .28s ease,border-color .28s ease,box-shadow .28s ease,filter .28s ease !important; }
+:where(button,.btn,.button,input[type=submit],input[type=button],.theme-btn,.menu-btn) { border-radius:999px; }
+:where(button,.btn,.button,input[type=submit],input[type=button],.theme-btn,.menu-btn):hover { transform:translateY(-2px); border-color:rgba(53,240,164,.5) !important; box-shadow:0 10px 28px rgba(0,0,0,.2),0 0 22px rgba(53,240,164,.08); }
+:where(button,.btn,.button,input[type=submit],input[type=button]).primary,
+:where(.btn-primary,.btn.primary,.button-primary,.primary-button) { background:linear-gradient(135deg,#a8ffd6 0%,#35f0a4 52%,#0fa66b 100%) !important; color:#03150c !important; border-color:transparent !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 28px rgba(53,240,164,.2) !important; }
+:where(input:not([type=checkbox]):not([type=radio]),textarea,select) { background:rgba(2,13,8,.56) !important; color:var(--fo-text) !important; border-color:rgba(192,255,222,.17) !important; border-radius:14px; }
+:where(input:not([type=checkbox]):not([type=radio]),textarea,select):focus { outline:2px solid rgba(53,240,164,.4) !important; outline-offset:1px; border-color:var(--fo-green) !important; box-shadow:0 0 0 4px rgba(53,240,164,.08) !important; }
+:where(a,.nav a,.nav-links a):hover { color:var(--fo-green); }
+:where(.brand-mark,.logo,.logo-mark,.avatar,.mini-avatar,.highlight-icon,.feature-icon,.empty-icon) { box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 28px rgba(53,240,164,.12); }
+:where(.brand-mark,.logo,.logo-mark) { animation:fo-logo-breathe 5s ease-in-out infinite; }
+@keyframes fo-logo-breathe { 0%,100%{filter:saturate(1);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 24px rgba(53,240,164,.13)} 50%{filter:saturate(1.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 12px 34px rgba(53,240,164,.24)} }
+:where(.header,.topbar,.topline,.navbar) { background:rgba(3,14,9,.62) !important; -webkit-backdrop-filter:blur(26px) saturate(170%); backdrop-filter:blur(26px) saturate(170%); }
+:where(.hero h1,.section-title,h1,h2) { text-wrap:balance; }
+:where(.hero h1,.topbar h1) { animation:fo-title-in .85s var(--fo-ease) both; }
+@keyframes fo-title-in { from{opacity:0;transform:translateY(16px);filter:blur(7px)} to{opacity:1;transform:translateY(0);filter:blur(0)} }
+:where(.feature,.post,.post-card,.profile-card,.community-card,.marketplace-card,.notification-card,.material,.auth-card,.form-card,.developer-card,.cta-box) { animation:fo-card-in .75s var(--fo-ease) both; }
+@keyframes fo-card-in { from{opacity:.25;transform:translateY(18px) scale(.99)} to{opacity:1;transform:translateY(0) scale(1)} }
 img,video,iframe { max-width:100%; }
-img { height:auto; }
-::selection { background:rgba(53,240,164,.28); color:inherit; }
-@media (prefers-reduced-motion:reduce) {
-  html { scroll-behavior:auto; }
-  *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; }
-}
-
-
-/* ---------- FUNAAB ONE cross-page design alignment v2 ----------
-   Target actual template class names, not only generic .card/.panel names. */
-:root {
-  --fo-radius: 22px;
-}
-body {
-  color: var(--fo-text, #ecf8f1);
-}
-:where(.profile-card,.post,.panel,.material,.group,.listing,.login-card,.card,.creator,.mission,.phone,.tile,.float-card,.notification-card,.item) {
-  border: 1px solid rgba(135, 255, 196, .13);
-  border-radius: var(--fo-radius, 22px);
-  box-shadow: 0 18px 48px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.035);
-}
-:where(.profile-card,.post,.panel,.material,.group,.listing,.login-card,.card,.creator,.mission,.phone,.tile,.float-card,.notification-card,.item) {
-  background-color: rgba(9, 27, 19, .82);
-}
-:where(.profile-card,.post,.panel,.material,.group,.listing,.login-card,.card,.creator,.mission,.phone,.tile,.float-card,.notification-card,.item):hover {
-  border-color: rgba(53,240,164,.28);
-  box-shadow: 0 22px 56px rgba(0,0,0,.25), 0 0 0 1px rgba(53,240,164,.025);
-}
-:where(.profile-card,.post,.panel,.material,.group,.listing,.login-card,.card,.creator,.mission,.phone,.tile,.float-card,.notification-card,.item) img {
-  border-radius: inherit;
-}
-:where(.stat,.stats > *, .preview-stat, .chip, .pill, .badge, .tag, .filter-btn, .post-tab, .post-tabs, .filter-rail, .nav a, .sidebar) {
-  border-color: rgba(135,255,196,.13);
-}
-:where(.stat,.preview-stat,.chip,.pill,.badge,.tag,.filter-btn,.post-tab,.post-tabs,.filter-rail) {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
-}
-:where(.btn,.pill-btn,.login-btn,.submit,button[type="submit"],input[type="submit"]) {
-  border-radius: 13px;
-  transition: transform .22s var(--fo-ease), filter .22s ease, box-shadow .22s ease, border-color .22s ease;
-}
-:where(.btn,.pill-btn,.login-btn,.submit,button[type="submit"],input[type="submit"]):hover {
-  transform: translateY(-1px);
-  filter: brightness(1.07);
-}
-:where(input:not([type=checkbox]):not([type=radio]),textarea,select) {
-  border-color: rgba(135,255,196,.15);
-  border-radius: 12px;
-}
-:where(.topbar,.top,.topline,.header,.nav-wrap) {
-  animation: fo-rise-in .48s var(--fo-ease) both;
-}
-:where(.profile-card,.post,.panel,.material,.group,.listing,.login-card,.card,.creator,.mission,.phone,.tile,.float-card,.notification-card,.item) {
-  animation: fo-rise-in .5s var(--fo-ease) both;
-}
-/* Keep theme toggles functional: light-mode pages retain readable light surfaces. */
-[data-theme="light"] :where(.profile-card,.post,.panel,.material,.group,.listing,.login-card,.card,.creator,.mission,.phone,.tile,.float-card,.notification-card,.item) {
-  background-color: rgba(255,255,255,.86);
-  border-color: rgba(10,70,42,.13);
-  box-shadow: 0 18px 44px rgba(10,50,30,.07), inset 0 1px 0 rgba(255,255,255,.75);
-}
+:where(.media,.post-media,.preview,.about-visual) { overflow:hidden; }
+::selection { background:rgba(53,240,164,.3); color:#f3fff8; }
+:where(a,button,input,textarea,select,summary):focus-visible { outline:2px solid var(--fo-green) !important; outline-offset:3px; }
+[data-theme="light"] body,html[data-theme="light"] body,body[data-theme="light"] { background-color:#eaf5ee !important; color:#0d2a1c; }
+[data-theme="light"] :where(.card,.panel,.post,.post-card,.profile-card,.marketplace-card,.product-card,.listing-card,.community-card,.conversation-card,.message-card,.event-card,.notification-card,.material,.material-card,.item,.empty,.empty-state,.hero-card,.auth-card,.form-card,.section-card,.result-card,.report-card,.settings-card,.preview,.preview-hero,.preview-stat,.preview-post,.highlight,.feature,.about-visual,.about-pill,.developer-card,.cta-box,.stat,.stats,.post-tabs,.tabs,.tab-bar,.filter-bar,.search-box,.search-panel,.modal-content,.modal-card,.dropdown-menu,.safety-actions,.flash) { background-color:rgba(255,255,255,.72) !important; background-image:linear-gradient(145deg,rgba(255,255,255,.88),rgba(231,247,237,.56)) !important; color:#0d2a1c; box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 18px 45px rgba(10,70,42,.09) !important; }
+[data-theme="light"] :where(input:not([type=checkbox]):not([type=radio]),textarea,select) { background:rgba(255,255,255,.82) !important;color:#0d2a1c !important; }
+@media(max-width:760px) { body::before{inset:-5%} :where(.card,.panel,.post,.post-card,.profile-card,.feature,.developer-card,.cta-box){border-radius:22px} }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; } }
