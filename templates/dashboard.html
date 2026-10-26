@@ -926,6 +926,40 @@ body { font-feature-settings: "ss01", "tnum"; -webkit-font-smoothing: antialiase
 .composer-foot { margin-top: 12px; }
 .composer-media-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .counter { font-variant-numeric: tabular-nums; }
+/* Post Composer 2.0: drag/drop, preview and upload feedback */
+.composer-dropzone { display:flex; align-items:center; gap:12px; margin-top:12px; padding:13px 14px; border:1px dashed color-mix(in srgb, var(--g) 36%, var(--border)); border-radius:16px; background:linear-gradient(120deg, color-mix(in srgb, var(--g) 6%, transparent), color-mix(in srgb, var(--surface) 55%, transparent)); transition:border-color .2s ease, background .2s ease, transform .2s ease; }
+.composer-dropzone.is-dragging { border-color:var(--g); background:color-mix(in srgb, var(--g) 13%, var(--surface)); transform:scale(1.005); box-shadow:0 0 0 4px color-mix(in srgb, var(--g) 9%, transparent); }
+.dropzone-icon { display:grid; place-items:center; width:38px; height:38px; flex:0 0 auto; border-radius:12px; background:var(--g-soft); color:var(--g); font-size:24px; }
+.dropzone-copy { display:flex; flex:1; min-width:0; flex-direction:column; gap:3px; }
+.dropzone-copy strong { font-size:12px; }
+.dropzone-copy span { color:var(--muted); font-size:10px; line-height:1.45; }
+.dropzone-choose { min-height:34px; white-space:nowrap; }
+.composer-preview { margin-top:12px; overflow:hidden; border:1px solid var(--g-line); border-radius:16px; background:color-mix(in srgb, var(--bg) 65%, transparent); }
+.composer-preview-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 13px; border-bottom:1px solid var(--border); }
+.composer-preview-head > span { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.composer-preview-head strong { font-size:12px; }
+.composer-preview-head small { color:var(--muted); font-size:10px; overflow-wrap:anywhere; }
+.composer-preview-stage { display:grid; place-items:center; max-height:360px; min-height:90px; padding:10px; background:radial-gradient(ellipse at center, color-mix(in srgb, var(--g) 7%, transparent), transparent 70%); }
+.composer-preview-stage img, .composer-preview-stage video { display:block; max-width:100%; max-height:340px; width:auto; height:auto; object-fit:contain; border-radius:10px; }
+.composer-preview-stage video { width:auto; max-width:100%; }
+.composer-upload-progress { height:5px; margin-top:10px; overflow:hidden; border-radius:99px; background:color-mix(in srgb, var(--muted) 18%, transparent); }
+.composer-upload-progress span { display:block; width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg, var(--g), #b8ffda); box-shadow:0 0 12px color-mix(in srgb, var(--g) 45%, transparent); transition:width .12s linear; }
+.composer-upload-progress.is-indeterminate span { width:35%; animation:composerProgress 1.1s ease-in-out infinite; }
+@keyframes composerProgress { 0% { transform:translateX(-110%); } 100% { transform:translateX(320%); } }
+.composer-media-tools { min-width:0; }
+#uploadStatus { flex-basis:100%; line-height:1.5; }
+#uploadStatus.status-error { color:var(--danger); }
+#uploadStatus.status-success { color:var(--g); }
+#mediaName { max-width:min(260px, 100%); overflow-wrap:anywhere; }
+@media(max-width:650px) {
+ .composer-dropzone { align-items:flex-start; flex-wrap:wrap; padding:12px; }
+ .dropzone-copy { flex-basis:calc(100% - 54px); }
+ .dropzone-choose { margin-left:50px; }
+ .composer-preview-stage { max-height:280px; }
+ .composer-preview-stage img, .composer-preview-stage video { max-height:260px; }
+ .composer-preview-head { align-items:flex-start; }
+ #mediaName { max-width:100%; }
+}
 .poll-editor { border-radius: var(--r-md); border-color: var(--g-line); background: var(--g-soft); }
 
 /* Feed */
@@ -1217,6 +1251,16 @@ html, body { max-width: 100%; overflow-x: clip; }
                         <textarea id="postBody" name="body" maxlength="280"
                                   placeholder="What's happening on campus, {{ student.full_name.split()[0] }}?"
                                   required></textarea>
+                        <section class="composer-dropzone" id="composerDropzone" aria-label="Add media to your post">
+                            <div class="dropzone-icon" aria-hidden="true">＋</div>
+                            <div class="dropzone-copy"><strong>Drop a photo or video here</strong><span>or choose a file below · Images up to 15 MB · Videos up to 1 GB</span></div>
+                            <button type="button" class="btn dropzone-choose" id="dropzoneChooseBtn">Choose media</button>
+                        </section>
+                        <div class="composer-preview" id="composerPreview" hidden>
+                            <div class="composer-preview-head"><span><strong id="previewTitle">Media preview</strong><small id="previewDetails"></small></span><button type="button" class="text-btn danger" id="previewRemoveBtn">Remove media</button></div>
+                            <div class="composer-preview-stage" id="composerPreviewStage"></div>
+                        </div>
+                        <div class="composer-upload-progress" id="composerUploadProgress" hidden aria-hidden="true"><span id="composerUploadProgressFill"></span></div>
                         <div class="poll-editor" id="pollEditor">
                             <strong>Poll options</strong>
                             <div class="poll-options-editor">
@@ -1783,6 +1827,16 @@ html, body { max-width: 100%; overflow-x: clip; }
     const uploadedMediaPublicId = document.getElementById("uploadedMediaPublicId");
     const uploadedMediaType = document.getElementById("uploadedMediaType");
     const uploadStatus = document.getElementById("uploadStatus");
+    const composerDropzone = document.getElementById("composerDropzone");
+    const dropzoneChooseBtn = document.getElementById("dropzoneChooseBtn");
+    const composerPreview = document.getElementById("composerPreview");
+    const composerPreviewStage = document.getElementById("composerPreviewStage");
+    const previewTitle = document.getElementById("previewTitle");
+    const previewDetails = document.getElementById("previewDetails");
+    const previewRemoveBtn = document.getElementById("previewRemoveBtn");
+    const composerUploadProgress = document.getElementById("composerUploadProgress");
+    const composerUploadProgressFill = document.getElementById("composerUploadProgressFill");
+    let previewObjectUrl = null;
     let uploadingPostMedia = false;
     const postType = document.getElementById("postType");
     const pollEditor = document.getElementById("pollEditor");
@@ -1799,6 +1853,8 @@ html, body { max-width: 100%; overflow-x: clip; }
         pollClosesAt.disabled = !isPoll;
         mediaInput.disabled = isPoll;
         attachBtn.disabled = isPoll;
+        dropzoneChooseBtn.disabled = isPoll;
+        composerDropzone.hidden = isPoll || composerPreview.hidden === false;
         if (isPoll && (mediaInput.files.length || uploadedMediaUrl.value)) removeMediaBtn.click();
         standardModeBtn.setAttribute("aria-pressed", String(!isPoll));
         pollModeBtn.setAttribute("aria-pressed", String(isPoll));
@@ -1816,27 +1872,91 @@ html, body { max-width: 100%; overflow-x: clip; }
         postBtn.disabled = uploadingPostMedia || ((!postBody.value.trim() && !hasMedia) || length > 280);
     }
     postBody.addEventListener("input", updatePostCounter);
-    attachBtn.addEventListener("click", () => mediaInput.click());
-    mediaInput.addEventListener("change", () => {
-        const file = mediaInput.files[0];
+    function formatFileSize(bytes) {
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    }
+    function clearComposerPreview() {
+        if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+        previewObjectUrl = null;
+        composerPreviewStage.replaceChildren();
+        composerPreview.hidden = true;
+        composerDropzone.hidden = false;
+    }
+    function showComposerPreview(file) {
+        clearComposerPreview();
+        if (!file) return;
+        const isImage = file.type.startsWith("image/");
+        const isVideo = file.type.startsWith("video/");
+        const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm", "video/quicktime", "video/x-m4v", "video/x-matroska"];
+        const maxBytes = isVideo ? 1024 * 1024 * 1024 : 15 * 1024 * 1024;
+        if ((!isImage && !isVideo) || (file.type && !allowed.includes(file.type)) || file.size > maxBytes) {
+            mediaInput.value = "";
+            uploadStatus.textContent = isVideo ? "Choose a supported video up to 1 GB." : "Choose a JPG, PNG, WEBP, GIF or supported video. Images must be 15 MB or smaller.";
+            uploadStatus.classList.add("status-error");
+            mediaName.textContent = "";
+            removeMediaBtn.hidden = true;
+            updatePostCounter();
+            return;
+        }
         uploadedMediaUrl.value = "";
         uploadedMediaPublicId.value = "";
         uploadedMediaType.value = "";
-        uploadStatus.textContent = "";
-        mediaName.textContent = file ? `${file.name} (${(file.size / 1048576).toFixed(1)} MB)` : "";
-        removeMediaBtn.hidden = !file;
+        uploadStatus.textContent = "Ready to attach. Your media uploads securely when you publish.";
+        uploadStatus.classList.remove("status-error", "status-success");
+        mediaName.textContent = `${file.name} · ${formatFileSize(file.size)}`;
+        previewTitle.textContent = isVideo ? "Video preview" : "Photo preview";
+        previewDetails.textContent = `${file.name} · ${formatFileSize(file.size)}`;
+        previewObjectUrl = URL.createObjectURL(file);
+        const media = document.createElement(isVideo ? "video" : "img");
+        media.src = previewObjectUrl;
+        media.className = "composer-preview-media";
+        if (isVideo) { media.controls = true; media.playsInline = true; media.preload = "metadata"; }
+        else { media.alt = "Selected photo preview"; media.loading = "eager"; }
+        composerPreviewStage.replaceChildren(media);
+        composerPreview.hidden = false;
+        composerDropzone.hidden = true;
+        removeMediaBtn.hidden = false;
         updatePostCounter();
+    }
+    attachBtn.addEventListener("click", () => mediaInput.click());
+    dropzoneChooseBtn.addEventListener("click", () => mediaInput.click());
+    mediaInput.addEventListener("change", () => showComposerPreview(mediaInput.files[0]));
+    ["dragenter", "dragover"].forEach(type => composerDropzone.addEventListener(type, event => {
+        event.preventDefault();
+        if (!mediaInput.disabled && !uploadingPostMedia) composerDropzone.classList.add("is-dragging");
+    }));
+    ["dragleave", "dragend"].forEach(type => composerDropzone.addEventListener(type, event => {
+        event.preventDefault(); composerDropzone.classList.remove("is-dragging");
+    }));
+    composerDropzone.addEventListener("drop", event => {
+        event.preventDefault();
+        composerDropzone.classList.remove("is-dragging");
+        if (mediaInput.disabled || uploadingPostMedia) return;
+        const file = event.dataTransfer?.files?.[0];
+        if (!file) return;
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        mediaInput.files = transfer.files;
+        showComposerPreview(file);
     });
-    removeMediaBtn.addEventListener("click", () => {
+    function removeComposerMedia() {
         mediaInput.value = "";
         uploadedMediaUrl.value = "";
         uploadedMediaPublicId.value = "";
         uploadedMediaType.value = "";
         mediaName.textContent = "";
         uploadStatus.textContent = "";
+        uploadStatus.classList.remove("status-error", "status-success");
         removeMediaBtn.hidden = true;
+        clearComposerPreview();
+        composerUploadProgress.hidden = true;
+        composerUploadProgressFill.style.width = "0%";
+        composerUploadProgress.classList.remove("is-indeterminate");
         updatePostCounter();
-    });
+    }
+    removeMediaBtn.addEventListener("click", removeComposerMedia);
+    previewRemoveBtn.addEventListener("click", removeComposerMedia);
 
     function uploadPostMedia(file) {
         return new Promise(async (resolve, reject) => {
@@ -1870,9 +1990,19 @@ html, body { max-width: 100%; overflow-x: clip; }
 
                 const xhr = new XMLHttpRequest();
                 xhr.open("POST", `https://api.cloudinary.com/v1_1/${signed.cloud_name}/${signed.resource_type}/upload`);
+                composerUploadProgress.hidden = false;
+                composerUploadProgress.setAttribute("aria-hidden", "false");
+                composerUploadProgress.classList.remove("is-indeterminate");
+                composerUploadProgressFill.style.width = "0%";
                 xhr.upload.onprogress = event => {
                     if (event.lengthComputable) {
-                        uploadStatus.textContent = `Uploading ${Math.round(event.loaded / event.total * 100)}%`;
+                        const percent = Math.round(event.loaded / event.total * 100);
+                        composerUploadProgressFill.style.width = `${percent}%`;
+                        uploadStatus.textContent = `Uploading media · ${percent}%`;
+                        uploadStatus.classList.remove("status-error", "status-success");
+                    } else {
+                        composerUploadProgress.classList.add("is-indeterminate");
+                        uploadStatus.textContent = "Uploading media…";
                     }
                 };
                 xhr.onerror = () => reject(new Error("Upload connection failed. Please try again."));
@@ -1924,6 +2054,11 @@ html, body { max-width: 100%; overflow-x: clip; }
         }
         postBody.value = ""; mediaInput.value = ""; uploadedMediaUrl.value = ""; uploadedMediaPublicId.value = ""; uploadedMediaType.value = "";
         const mediaName = document.getElementById("mediaName"); if (mediaName) mediaName.textContent = "";
+        clearComposerPreview();
+        composerUploadProgress.hidden = true;
+        composerUploadProgress.setAttribute("aria-hidden", "true");
+        composerUploadProgressFill.style.width = "0%";
+        uploadStatus.classList.remove("status-error", "status-success");
         uploadStatus.textContent = post.type === "poll" ? "Poll published!" : "Post published!";
         postForm.dataset.readyToPublish = ""; postBtn.textContent = "Post"; uploadingPostMedia = false;
         updatePostCounter();
@@ -1968,11 +2103,17 @@ html, body { max-width: 100%; overflow-x: clip; }
             if (!uploadedMediaUrl.value || !uploadedMediaPublicId.value) throw new Error("Upload finished without a valid media URL.");
             // Remove the binary file from the form so Vercel receives only small text fields.
             mediaInput.value = "";
+            composerUploadProgressFill.style.width = "100%";
             uploadStatus.textContent = "Upload complete. Publishing post…";
+            uploadStatus.classList.remove("status-error");
+            uploadStatus.classList.add("status-success");
             postBtn.textContent = "Publishing...";
             await publishPostAjax();
         } catch (error) {
             uploadStatus.textContent = error.message || "Upload failed. Please try again.";
+            uploadStatus.classList.remove("status-success");
+            uploadStatus.classList.add("status-error");
+            composerUploadProgressFill.style.width = "0%";
             postBtn.textContent = "Post";
             attachBtn.disabled = false;
             removeMediaBtn.disabled = false;
