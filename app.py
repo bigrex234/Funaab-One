@@ -676,6 +676,16 @@ class AcademicMaterial(db.Model):
 # HELPERS
 # ==================================================
 
+class ReflexRushScore(db.Model):
+    """A completed Reflex Rush run. One row per submitted run; leaderboard uses each player's best score."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    score = db.Column(db.Integer, nullable=False, index=True)
+    duration_ms = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+    user = db.relationship("User", backref=db.backref("reflex_rush_scores", lazy="dynamic", cascade="all, delete-orphan"))
+
+
 class AdminAction(db.Model):
     """Audit trail for administrative actions; additive and append-only."""
     id = db.Column(db.Integer, primary_key=True)
@@ -1529,6 +1539,76 @@ def logout():
 # ==================================================
 # DASHBOARD / CAMPUS FEED
 # ==================================================
+
+@app.route("/games/reflex-rush", methods=["GET"])
+@login_required
+def reflex_rush():
+    """Play Reflex Rush and view the campus-wide best-score leaderboard."""
+    leaderboard = db.session.query(
+        User,
+        db.func.max(ReflexRushScore.score).label("best_score"),
+    ).join(ReflexRushScore, ReflexRushScore.user_id == User.id).filter(
+        User.is_suspended.is_(False)
+    ).group_by(User.id).order_by(
+        db.func.max(ReflexRushScore.score).desc(),
+        User.username.asc(),
+    ).limit(10).all()
+    my_best = db.session.query(db.func.max(ReflexRushScore.score)).filter(
+        ReflexRushScore.user_id == current_user.id
+    ).scalar() or 0
+    return render_template(
+        "reflex_rush.html",
+        student=current_user,
+        leaderboard=leaderboard,
+        my_best=my_best,
+    )
+
+
+@app.route("/games/reflex-rush/score", methods=["POST"])
+@login_required
+def reflex_rush_submit_score():
+    """Validate and save a finished run. Flask-WTF CSRF protection remains enabled."""
+    try:
+        score = int(request.form.get("score", "-1"))
+        duration_ms = int(request.form.get("duration_ms", "0"))
+    except (TypeError, ValueError):
+        return jsonify(ok=False, error="Invalid score submission."), 400
+
+    # A run is 30 seconds. Permit modest timing variance, but reject obvious junk.
+    if score < 0 or score > 600 or duration_ms < 25000 or duration_ms > 45000:
+        return jsonify(ok=False, error="That run could not be verified. Please play a new round."), 400
+
+    # A hit is worth 10 points, and a 30-second round has a conservative upper bound.
+    if score % 10 != 0 or score > 10 * max(1, duration_ms // 350):
+        return jsonify(ok=False, error="That score looks invalid. Please play a new round."), 400
+
+    record = ReflexRushScore(
+        user_id=current_user.id,
+        score=score,
+        duration_ms=duration_ms,
+    )
+    db.session.add(record)
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Reflex Rush score save failed")
+        return jsonify(ok=False, error="We couldn't save your score. Please try again."), 500
+
+    best_score = db.session.query(db.func.max(ReflexRushScore.score)).filter(
+        ReflexRushScore.user_id == current_user.id
+    ).scalar() or 0
+    best_scores = db.session.query(
+        ReflexRushScore.user_id.label("user_id"),
+        db.func.max(ReflexRushScore.score).label("best_score"),
+    ).join(User, User.id == ReflexRushScore.user_id).filter(
+        User.is_suspended.is_(False)
+    ).group_by(ReflexRushScore.user_id).subquery()
+    rank = db.session.query(db.func.count()).select_from(best_scores).filter(
+        best_scores.c.best_score > best_score
+    ).scalar() + 1
+    return jsonify(ok=True, best_score=best_score, rank=rank)
+
 
 @app.route("/dashboard")
 @login_required
