@@ -1629,6 +1629,26 @@ def dashboard():
     )
 
 
+@app.route("/api/feed/updates")
+@login_required
+def feed_updates():
+    """Lightweight authenticated feed heartbeat; never exposes post content."""
+    try:
+        after_id = max(0, int(request.args.get("after_id", "0")))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Invalid cursor."}), 400
+
+    hidden_user_ids = blocked_user_ids_for(current_user.id)
+    query = select(Post.id).where(Post.id > after_id)
+    if hidden_user_ids:
+        query = query.where(Post.user_id.not_in(hidden_user_ids))
+    # Count is bounded by the query and only IDs/counts are returned. Post bodies
+    # and private user data are deliberately not included in this heartbeat.
+    new_ids = db.session.scalars(query.order_by(Post.id.desc()).limit(100)).all()
+    latest_id = db.session.scalar(select(db.func.max(Post.id))) or 0
+    return jsonify({"ok": True, "count": len(new_ids), "latest_id": latest_id})
+
+
 # ==================================================
 # CAMPUS STORIES
 # ==================================================
