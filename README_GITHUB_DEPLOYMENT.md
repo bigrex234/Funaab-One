@@ -25,3 +25,7 @@ When `DATABASE_URL` is unset, the app continues to use its SQLite database local
 
 ## Security
 Never commit `.env`, API secrets, the local database, or uploaded student files. If a secret has been exposed, rotate it in the provider dashboard.
+
+## Audius music integration (optional, free tier)
+
+FUNAAB ONE includes an authenticated `/music` page backed by the Audius read-only track search and stream endpoints. The page can search public Audius tracks without an API key; configure `AUDIUS_API_KEY` in Vercel Project Settings → Environment Variables (and locally in `.env`) if you want to use your free key for API requests. Never commit `.env` or paste bearer tokens into source code. The free API plan has provider-defined rate limits, and playback depends on each track's availability and rights. Favourites and track metadata are stored in the current browser's local storage, so they are per browser/device rather than synced between devices. No database migration is needed.
