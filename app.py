@@ -8,7 +8,9 @@ import io
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from functools import wraps
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, urlencode
+from urllib.request import Request as URLRequest, urlopen
+from urllib.error import URLError, HTTPError
 
 from flask import (
     Flask, abort, flash, jsonify, redirect, render_template, request, url_for
@@ -1580,6 +1582,64 @@ def logout():
 # ==================================================
 # DASHBOARD / CAMPUS FEED
 # ==================================================
+
+@app.route("/music", methods=["GET"])
+@login_required
+def music():
+    """Audius-powered music discovery and browser-local personal library."""
+    return render_template("music.html", student=current_user)
+
+
+@app.route("/api/music/search", methods=["GET"])
+@login_required
+def music_search():
+    query = (request.args.get("q") or "").strip()[:100]
+    if len(query) < 2:
+        return jsonify(ok=True, tracks=[])
+    params = {"query": query, "limit": 20, "app_name": "FUNAAB_ONE"}
+    api_key = os.environ.get("AUDIUS_API_KEY", "").strip()
+    if api_key:
+        params["api_key"] = api_key
+    endpoint = "https://api.audius.co/v1/tracks/search?" + urlencode(params)
+    try:
+        req = URLRequest(endpoint, headers={"Accept": "application/json", "User-Agent": "FUNAAB-ONE/1.0"})
+        with urlopen(req, timeout=8) as response:
+            payload = json.loads(response.read(2 * 1024 * 1024).decode("utf-8"))
+        raw_tracks = payload.get("data", []) if isinstance(payload, dict) else []
+        tracks = []
+        for track in raw_tracks[:20]:
+            if not isinstance(track, dict) or not track.get("id"):
+                continue
+            artwork = track.get("artwork") or {}
+            user = track.get("user") or {}
+            tracks.append({
+                "id": str(track.get("id")),
+                "title": str(track.get("title") or "Untitled track")[:250],
+                "artist": str(user.get("name") or user.get("handle") or "Audius artist")[:150],
+                "artist_handle": str(user.get("handle") or "")[:100],
+                "artwork": artwork.get("480x480") or artwork.get("150x150") or "",
+                "duration": max(0, int(track.get("duration") or 0)),
+                "permalink": str(track.get("permalink") or ""),
+                "stream_url": url_for("music_stream", track_id=str(track.get("id"))),
+            })
+        return jsonify(ok=True, tracks=tracks)
+    except (HTTPError, URLError, TimeoutError, ValueError, OSError) as exc:
+        app.logger.warning("Audius search unavailable: %s", type(exc).__name__)
+        return jsonify(ok=False, tracks=[], error="Music search is temporarily unavailable. Please try again."), 502
+
+
+@app.route("/api/music/stream/<string:track_id>", methods=["GET"])
+@login_required
+def music_stream(track_id):
+    # Track IDs are constrained to a safe path-segment character set.
+    if not track_id or len(track_id) > 100 or not all(c.isalnum() or c in "-_" for c in track_id):
+        abort(400)
+    params = {"app_name": "FUNAAB_ONE"}
+    api_key = os.environ.get("AUDIUS_API_KEY", "").strip()
+    if api_key:
+        params["api_key"] = api_key
+    return redirect("https://api.audius.co/v1/tracks/" + track_id + "/stream?" + urlencode(params), code=302)
+
 
 @app.route("/arcade", methods=["GET"])
 @login_required
