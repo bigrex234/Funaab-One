@@ -27,7 +27,24 @@
     .btn.primary:hover{background:#8af0ac}
     .btn:focus-visible,a:focus-visible{outline:2px solid var(--green);outline-offset:3px}
     .profile-card{overflow:hidden;border:1px solid var(--line);border-radius:28px;background:linear-gradient(145deg,#10291f,#0b1b14 68%);box-shadow:0 24px 70px #0003}
-    .cover{height:190px;position:relative;overflow:hidden;background:linear-gradient(115deg,#1e633b,#0d3525 55%,#10271d)}
+    .cover{height:220px;position:relative;overflow:hidden;background:linear-gradient(115deg,#1e633b,#0d3525 55%,#10271d)}
+    .cover-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.92}
+    .cover-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,15,9,.62),rgba(3,15,9,.08) 70%),linear-gradient(0deg,rgba(3,15,9,.48),transparent 65%)}
+    .cover:before,.cover:after{pointer-events:none;z-index:1}
+    .cover-label{z-index:2;text-shadow:0 2px 12px #0008}
+    .profile-actions{position:relative;z-index:3}
+    .detail-badge{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(105,230,155,.2);border-radius:999px;padding:7px 11px;background:rgba(105,230,155,.07);color:#c9f6d8;font-size:12px;font-weight:650}
+    .interest-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .interest-chip{padding:7px 11px;border-radius:999px;border:1px solid rgba(132,255,194,.16);background:rgba(255,255,255,.035);color:#c5e9d2;font-size:12px}
+    .gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .gallery-item{position:relative;overflow:hidden;aspect-ratio:1;border-radius:16px;border:1px solid var(--line);background:#06110b;display:block}
+    .gallery-item img,.gallery-item video{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+    .gallery-item:hover img,.gallery-item:hover video{transform:scale(1.05)}
+    .gallery-kind{position:absolute;left:8px;bottom:8px;padding:5px 8px;border-radius:999px;background:#06110bd9;border:1px solid #ffffff20;font-size:11px}
+    .pinned-label{display:inline-flex;align-items:center;gap:5px;color:#a8f5c3;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:9px}
+    .pin-form{margin-left:auto}
+    .pin-form .btn{font-size:11px;padding:6px 9px}
+    .gallery-empty{padding:22px;border:1px dashed rgba(132,255,194,.16);border-radius:16px;color:var(--muted);font-size:13px}
     .cover:before,.cover:after{content:"";position:absolute;border:1px solid #b8ffd029;border-radius:50%;width:360px;height:360px;right:-60px;top:-230px}
     .cover:after{width:270px;height:270px;right:90px;top:-160px}
     .cover-label{position:absolute;bottom:18px;left:24px;color:#d8ffe4;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
@@ -77,7 +94,8 @@
       .topbar{margin-bottom:14px}
       .brand-mark{width:38px;height:38px;border-radius:12px}
       .top-actions .btn{padding:9px 11px;font-size:12px}
-      .cover{height:145px}
+      .cover{height:160px}
+      .gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
       .profile-main{padding:0 16px 20px}
       .identity-row{align-items:flex-end;gap:8px;margin-top:-42px}
       .avatar{width:88px;height:88px;border-radius:25px;border-width:4px;font-size:29px}
@@ -127,7 +145,7 @@
     @media(prefers-reduced-motion:reduce){.stat,.post,.post-tab{transition:none!important}}
 
   </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css', v='3') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
 </head>
 <body>
   <div class="shell">
@@ -153,7 +171,10 @@
 
     <main>
       <section class="profile-card" aria-labelledby="profile-name">
-        <div class="cover"><span class="cover-label">FUNAAB ONE · COMMUNITY</span></div>
+        <div class="cover">
+          {% if profile_user.cover_photo %}<img class="cover-photo" src="{{ profile_user.cover_photo|e }}" alt="{{ profile_user.full_name or profile_user.username }}'s cover photo">{% endif %}
+          <span class="cover-shade" aria-hidden="true"></span><span class="cover-label">FUNAAB ONE · COMMUNITY</span>
+        </div>
         <div class="profile-main">
           <div class="identity-row">
             <div class="avatar" aria-label="Profile avatar">
@@ -220,15 +241,21 @@
 
             <div class="details">
               {% if profile_user.department is defined and profile_user.department %}
-                <span class="detail">⌂ {{ profile_user.department }}</span>
+                <span class="detail-badge" title="Department">⌂ {{ profile_user.department }}</span>
               {% endif %}
               {% if profile_user.level is defined and profile_user.level %}
-                <span class="detail">▦ {{ profile_user.level }} level</span>
+                <span class="detail-badge" title="Academic level">▦ {{ profile_user.level }} Level</span>
               {% endif %}
               {% if profile_user.created_at is defined and profile_user.created_at %}
                 <span class="detail">◷ Joined {{ profile_user.created_at.strftime('%b %Y') }}</span>
               {% endif %}
             </div>
+
+            {% if profile_interests %}
+              <div class="interest-list" aria-label="Interests">
+                {% for interest in profile_interests %}<span class="interest-chip">✦ {{ interest }}</span>{% endfor %}
+              </div>
+            {% endif %}
 
             <div class="stats" aria-label="Profile statistics">
               <div class="stat"><strong>{{ posts_count }}</strong><span>Posts</span></div>
@@ -237,6 +264,28 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section aria-labelledby="gallery-title">
+        <div class="content-head">
+          <div><h2 id="gallery-title">Media gallery</h2><p>Photos and videos shared by {{ 'you' if profile_user.id == student.id else profile_user.username }}</p></div>
+          <span class="btn">{{ gallery_posts|length }} items</span>
+        </div>
+        {% if gallery_posts %}
+          <div class="gallery-grid">
+            {% for item in gallery_posts[:12] %}
+              <a class="gallery-item" href="#profile-post-{{ item.id }}" aria-label="View media from post {{ item.id }}">
+                {% if item.media_type == 'video' %}
+                  <video muted playsinline preload="metadata"><source src="{{ item.media_url|e }}"></video><span class="gallery-kind">▶ Video</span>
+                {% else %}
+                  <img src="{{ item.media_url|e }}" alt="Photo from {{ profile_user.full_name or profile_user.username }}" loading="lazy"><span class="gallery-kind">Photo</span>
+                {% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="gallery-empty">No photos or videos here yet.</div>
+        {% endif %}
       </section>
 
       <section aria-labelledby="posts-title">
@@ -253,7 +302,8 @@
         {% if posts %}
           <div class="post-list">
             {% for post in posts %}
-              <article class="post" data-profile-post data-has-media="{{ 'true' if post.media_url else 'false' }}">
+              <article class="post" id="profile-post-{{ post.id }}" data-profile-post data-has-media="{{ 'true' if post.media_url else 'false' }}">
+                {% if profile_user.pinned_post_id == post.id %}<div class="pinned-label">⌁ Pinned to profile</div>{% endif %}
                 <div class="post-top">
                   <div class="mini-avatar">
                     {% if profile_user.avatar_url is defined and profile_user.avatar_url %}
@@ -270,6 +320,12 @@
                       {% if post.created_at %}{{ post.created_at.strftime('%b %d, %Y · %I:%M %p') }}{% else %}Shared on FUNAAB ONE{% endif %}
                     </div>
                   </div>
+                  {% if profile_user.id == student.id %}
+                    <form class="pin-form" method="post" action="{{ url_for('toggle_pinned_profile_post', username=profile_user.username, post_id=post.id) }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button class="btn" type="submit">{% if profile_user.pinned_post_id == post.id %}Unpin{% else %}⌁ Pin{% endif %}</button>
+                    </form>
+                  {% endif %}
                 </div>
                 {% if profile_user.id != student.id %}
                   <details style="margin:8px 0">
