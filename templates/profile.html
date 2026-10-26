@@ -95,6 +95,37 @@
     }
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
     .safety-menu{position:relative}.safety-menu summary{list-style:none}.safety-menu summary::-webkit-details-marker{display:none}.safety-actions{position:absolute;z-index:10;right:0;top:calc(100% + 8px);width:min(300px,85vw);padding:14px;background:#0d2119;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 38px #0006;display:grid;gap:14px}.safety-actions form{display:grid;gap:8px}.safety-actions select,.safety-actions textarea{width:100%;background:#07130f;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px;font:inherit}.safety-actions textarea{min-height:75px;resize:vertical}.btn.danger{color:var(--danger)}
+
+    /* Student Profiles 2.0 — emerald glass polish and client-side content tabs */
+    body{background:radial-gradient(ellipse at 50% -15%,rgba(46,229,157,.16),transparent 45%),radial-gradient(ellipse at 100% 45%,rgba(16,185,129,.07),transparent 32%),var(--bg);background-attachment:fixed}
+    .topbar{padding:11px 0}
+    .brand-mark{box-shadow:0 0 0 5px rgba(105,230,155,.09),0 10px 30px rgba(56,182,106,.15)}
+    .btn{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .profile-card{background:linear-gradient(145deg,rgba(16,41,31,.88),rgba(7,24,17,.93));border-color:rgba(132,255,194,.17);box-shadow:0 28px 80px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.04);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+    .cover{background:radial-gradient(circle at 75% 15%,rgba(95,255,179,.26),transparent 28%),linear-gradient(115deg,#1e633b,#0d3525 55%,#10271d)}
+    .cover:after{border-color:rgba(184,255,208,.10)}
+    .avatar{box-shadow:0 14px 34px rgba(0,0,0,.38),0 0 0 4px rgba(105,230,155,.10)}
+    .identity{padding-bottom:2px}
+    .name-line h1{letter-spacing:-.045em}
+    .stats{gap:12px;border-top-color:rgba(132,255,194,.13)}
+    .stat{padding:11px 15px;border:1px solid rgba(132,255,194,.12);border-radius:14px;background:rgba(255,255,255,.025);transition:background .18s,border-color .18s,transform .18s}
+    .stat:hover{background:rgba(105,230,155,.06);border-color:rgba(105,230,155,.28);transform:translateY(-2px)}
+    .stat strong{font-size:20px}
+    .content-head{margin-top:30px}
+    .content-head h2{font-size:22px;letter-spacing:-.045em}
+    .post-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 14px;padding:5px;border:1px solid rgba(132,255,194,.13);border-radius:15px;background:rgba(255,255,255,.025);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+    .post-tab{border:1px solid transparent;border-radius:11px;padding:9px 14px;background:transparent;color:var(--muted);font-size:12px;font-weight:800;cursor:pointer;transition:all .18s}
+    .post-tab:hover,.post-tab[aria-pressed="true"]{color:var(--green);background:rgba(105,230,155,.10);border-color:rgba(105,230,155,.2)}
+    .post{background:linear-gradient(145deg,rgba(14,36,26,.88),rgba(7,24,17,.90));border-color:rgba(132,255,194,.13);box-shadow:0 14px 38px rgba(0,0,0,.12),inset 0 1px rgba(255,255,255,.025);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:transform .18s,border-color .18s,background .18s}
+    .post:hover{transform:translateY(-2px);border-color:rgba(105,230,155,.25)}
+    .media{border-color:rgba(132,255,194,.14);box-shadow:0 12px 32px rgba(0,0,0,.17)}
+    .post-meta{border-top-color:rgba(132,255,194,.12)}
+    .empty{background:rgba(11,27,20,.70);border-color:rgba(132,255,194,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .safety-actions{background:rgba(13,33,25,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+    [data-profile-hidden="true"]{display:none!important}
+    @media(max-width:600px){body{background-attachment:scroll}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.stat{padding:10px 8px;align-items:center}.stat strong{font-size:17px}.stat span{text-align:center}.post-tabs{width:100%}.post-tab{flex:1;padding:9px 8px}.content-head h2{font-size:20px}}
+    @media(prefers-reduced-motion:reduce){.stat,.post,.post-tab{transition:none!important}}
+
   </style>
 </head>
 <body>
@@ -212,11 +243,16 @@
           <div><h2 id="posts-title">Posts</h2><p>What {{ 'you have' if profile_user.id == student.id else profile_user.username ~ ' has' }} shared with campus</p></div>
           <span class="btn" aria-label="Number of posts">{{ posts_count }} total</span>
         </div>
+        <div class="post-tabs" role="group" aria-label="Filter profile content">
+          <button class="post-tab" type="button" data-profile-filter="all" aria-pressed="true">All posts</button>
+          <button class="post-tab" type="button" data-profile-filter="media" aria-pressed="false">Photos & videos</button>
+          <button class="post-tab" type="button" data-profile-filter="text" aria-pressed="false">Text posts</button>
+        </div>
 
         {% if posts %}
           <div class="post-list">
             {% for post in posts %}
-              <article class="post">
+              <article class="post" data-profile-post data-has-media="{{ 'true' if post.media_url else 'false' }}">
                 <div class="post-top">
                   <div class="mini-avatar">
                     {% if profile_user.avatar_url is defined and profile_user.avatar_url %}
@@ -288,5 +324,23 @@
     </main>
     <footer class="footer">FUNAAB ONE · Growing together, one connection at a time.</footer>
   </div>
+
+<script>
+(() => {
+  const buttons = [...document.querySelectorAll('[data-profile-filter]')];
+  const posts = [...document.querySelectorAll('[data-profile-post]')];
+  if (!buttons.length || !posts.length) return;
+  buttons.forEach(button => button.addEventListener('click', () => {
+    const filter = button.dataset.profileFilter;
+    buttons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    posts.forEach(post => {
+      const hasMedia = post.dataset.hasMedia === 'true';
+      const visible = filter === 'all' || (filter === 'media' && hasMedia) || (filter === 'text' && !hasMedia);
+      post.dataset.profileHidden = String(!visible);
+    });
+  }));
+})();
+</script>
+
 </body>
 </html>
