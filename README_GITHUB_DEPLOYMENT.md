@@ -26,6 +26,11 @@ When `DATABASE_URL` is unset, the app continues to use its SQLite database local
 ## Security
 Never commit `.env`, API secrets, the local database, or uploaded student files. If a secret has been exposed, rotate it in the provider dashboard.
 
-## Audius music integration (optional, free tier)
+## Spotify music integration
 
-FUNAAB ONE includes an authenticated `/music` page backed by the Audius read-only track search and stream endpoints. The page can search public Audius tracks without an API key; configure `AUDIUS_API_KEY` in Vercel Project Settings → Environment Variables (and locally in `.env`) if you want to use your free key for API requests. Never commit `.env` or paste bearer tokens into source code. The free API plan has provider-defined rate limits, and playback depends on each track's availability and rights. Favourites and track metadata are stored in the current browser's local storage, so they are per browser/device rather than synced between devices. No database migration is needed.
+FUNAAB ONE's `/music` page uses Spotify's Web API for public track search and Spotify's official embedded player for playback. Configure these Vercel Environment Variables (Production and Preview as needed):
+
+- `SPOTIFY_CLIENT_ID`: the app Client ID from Spotify for Developers
+- `SPOTIFY_CLIENT_SECRET`: the app Client Secret from Spotify for Developers (Secret type; server-side only)
+
+Redeploy after setting or changing environment variables. Do not expose the Client Secret in templates, browser JavaScript, screenshots, or GitHub. This initial integration uses Spotify Client Credentials for catalogue search; it does not log each student into Spotify or grant personalized playback. Spotify controls playback availability, account requirements, app access, and policy restrictions. Spotify Development Mode currently has user and access limitations, so verify the current rules before rolling this out to the whole campus. Favourites are stored in local storage on each browser/device. No database migration is required.
