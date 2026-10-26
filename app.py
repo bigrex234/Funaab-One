@@ -1540,6 +1540,22 @@ def logout():
 # DASHBOARD / CAMPUS FEED
 # ==================================================
 
+@app.route("/arcade", methods=["GET"])
+@login_required
+def arcade():
+    """FUNAAB ONE Arcade lobby: playable games and clearly marked upcoming titles."""
+    playable_games = 1
+    players_count = db.session.query(db.func.count(db.distinct(ReflexRushScore.user_id))).scalar() or 0
+    top_score = db.session.query(db.func.max(ReflexRushScore.score)).scalar() or 0
+    return render_template(
+        "arcade.html",
+        student=current_user,
+        playable_games=playable_games,
+        players_count=players_count,
+        top_score=top_score,
+    )
+
+
 @app.route("/games/reflex-rush", methods=["GET"])
 @login_required
 def reflex_rush():
