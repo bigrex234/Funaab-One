@@ -1632,7 +1632,7 @@ def music_search():
         return jsonify(ok=True, tracks=[])
     try:
         token = _spotify_access_token()
-        params = urlencode({"q": query, "type": "track", "limit": 20, "market": "US"})
+        params = urlencode({"q": query, "type": "track", "limit": 10, "market": "US"})
         endpoint = "https://api.spotify.com/v1/search?" + params
         req = URLRequest(endpoint, headers={"Authorization": "Bearer " + token,
                                             "Accept": "application/json",
@@ -1641,7 +1641,7 @@ def music_search():
             payload = json.loads(response.read(2 * 1024 * 1024).decode("utf-8"))
         raw_tracks = ((payload.get("tracks") or {}).get("items") or []) if isinstance(payload, dict) else []
         tracks = []
-        for track in raw_tracks[:20]:
+        for track in raw_tracks[:10]:
             if not isinstance(track, dict) or not track.get("id"):
                 continue
             album = track.get("album") or {}
