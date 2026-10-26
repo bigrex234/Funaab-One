@@ -255,6 +255,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     # Optional profile fields. Existing users receive NULL values safely.
     profile_picture = db.Column(db.String(500), nullable=True)
+    cover_photo = db.Column(db.String(500), nullable=True)
+    interests = db.Column(db.String(500), nullable=False, default="")
+    pinned_post_id = db.Column(db.Integer, nullable=True)
     bio = db.Column(db.String(300), nullable=False, default="")
     # Additive account moderation flag; existing accounts default to active.
     is_suspended = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
@@ -1007,6 +1010,33 @@ def save_profile_picture(file_storage):
         )
 
     filename = f"avatar_{uuid.uuid4().hex}{extension}"
+    destination = UPLOAD_DIR / filename
+    destination.write_bytes(data)
+    return url_for("static", filename=f"uploads/{filename}")
+
+
+def save_profile_cover(file_storage):
+    """Validate and store a profile cover image using the existing media backend."""
+    if not file_storage or not file_storage.filename:
+        return None
+    data = file_storage.stream.read(5 * 1024 * 1024 + 1)
+    if not data:
+        raise ValueError("The selected cover photo is empty.")
+    if len(data) > 5 * 1024 * 1024:
+        raise ValueError("Cover photos must be 5 MB or smaller.")
+    if data.startswith(b"\xff\xd8\xff"):
+        extension = ".jpg"
+    elif data.startswith(b"\x89PNG\r\n\x1a\n"):
+        extension = ".png"
+    elif data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        extension = ".webp"
+    else:
+        raise ValueError("Choose a valid JPG, PNG, or WEBP cover photo.")
+    if CLOUDINARY_ENABLED:
+        return upload_media_to_cloudinary(
+            io.BytesIO(data), resource_type="image", folder="funaab-one/profile-covers"
+        )
+    filename = f"cover_{uuid.uuid4().hex}{extension}"
     destination = UPLOAD_DIR / filename
     destination.write_bytes(data)
     return url_for("static", filename=f"uploads/{filename}")
@@ -1944,6 +1974,10 @@ def profile(username):
         .where(Post.user_id == profile_user.id)
         .order_by(Post.created_at.desc())
     ).all()
+    # Keep the pinned post at the top without changing its actual creation date.
+    user_posts.sort(key=lambda post: (post.id == profile_user.pinned_post_id, post.created_at or utcnow()), reverse=True)
+    gallery_posts = [post for post in user_posts if post.media_url]
+    profile_interests = [item.strip() for item in (profile_user.interests or "").split(",") if item.strip()]
     posts_count = len(user_posts)
 
     followers_count = db.session.scalar(
@@ -1971,7 +2005,24 @@ def profile(username):
         followers_count=followers_count,
         following_count=following_count,
         is_following=is_following,
+        gallery_posts=gallery_posts,
+        profile_interests=profile_interests,
     )
+
+
+@app.route("/u/<string:username>/pin/<int:post_id>", methods=["POST"])
+@login_required
+def toggle_pinned_profile_post(username, post_id):
+    """Pin or unpin one of the signed-in user's own posts on their profile."""
+    if username != current_user.username:
+        abort(403)
+    post = db.session.get(Post, post_id)
+    if post is None or post.user_id != current_user.id:
+        abort(404)
+    current_user.pinned_post_id = None if current_user.pinned_post_id == post_id else post_id
+    db.session.commit()
+    flash("Post unpinned from your profile." if current_user.pinned_post_id is None else "Post pinned to your profile.", "success")
+    return redirect(url_for("profile", username=current_user.username))
 
 
 @app.route("/settings/profile", methods=["GET", "POST"])
@@ -1982,7 +2033,18 @@ def edit_profile():
         department = request.form.get("department", "").strip()
         level = request.form.get("level", "").strip()
         bio = request.form.get("bio", "").strip()
+        interests_raw = request.form.get("interests", "").strip()
+        cover_file = request.files.get("cover_photo")
         avatar_file = request.files.get("profile_picture")
+        interest_items = []
+        for item in interests_raw.split(","):
+            item = item.strip()
+            if item and item.lower() not in {x.lower() for x in interest_items}:
+                interest_items.append(item)
+        if len(interest_items) > 8 or any(len(item) > 30 for item in interest_items):
+            interest_error = "Add up to 8 interests, with each interest 30 characters or fewer."
+        else:
+            interest_error = None
 
         errors = []
         if not full_name or len(full_name) > 100:
@@ -1993,6 +2055,15 @@ def edit_profile():
             errors.append("Please select a valid academic level.")
         if len(bio) > 300:
             errors.append("Your bio must be 300 characters or fewer.")
+        if interest_error:
+            errors.append(interest_error)
+
+        cover_url = None
+        if cover_file and cover_file.filename:
+            try:
+                cover_url = save_profile_cover(cover_file)
+            except (ValueError, RuntimeError) as exc:
+                errors.append(str(exc))
 
         avatar_url = None
         if avatar_file and avatar_file.filename:
@@ -2013,6 +2084,9 @@ def edit_profile():
         current_user.department = department
         current_user.level = level
         current_user.bio = bio
+        current_user.interests = ", ".join(interest_items)
+        if cover_url:
+            current_user.cover_photo = cover_url
         if avatar_url:
             current_user.profile_picture = avatar_url
 
@@ -2032,7 +2106,9 @@ def edit_profile():
                     "department": current_user.department,
                     "level": current_user.level,
                     "bio": current_user.bio or "",
+                    "interests": current_user.interests or "",
                     "profile_picture": current_user.profile_picture or "",
+                    "cover_photo": current_user.cover_photo or "",
                     "profile_url": url_for("profile", username=current_user.username)}
         flash("Your profile has been updated.", "success")
         return redirect(url_for("profile", username=current_user.username))
@@ -4088,6 +4164,12 @@ def migrate_optional_profile_columns():
     with db.engine.begin() as connection:
         if "profile_picture" not in existing_columns:
             connection.execute(text("ALTER TABLE user ADD COLUMN profile_picture VARCHAR(500)"))
+        if "cover_photo" not in existing_columns:
+            connection.execute(text("ALTER TABLE user ADD COLUMN cover_photo VARCHAR(500)"))
+        if "interests" not in existing_columns:
+            connection.execute(text("ALTER TABLE user ADD COLUMN interests VARCHAR(500) NOT NULL DEFAULT ''"))
+        if "pinned_post_id" not in existing_columns:
+            connection.execute(text("ALTER TABLE user ADD COLUMN pinned_post_id INTEGER"))
         if "bio" not in existing_columns:
             connection.execute(text("ALTER TABLE user ADD COLUMN bio VARCHAR(300) NOT NULL DEFAULT ''"))
         if "is_suspended" not in existing_columns:
