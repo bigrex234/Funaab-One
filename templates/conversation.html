@@ -154,7 +154,7 @@ textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 4px color
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css', v='3') }}">
 </head><body><main class="shell">
 <header class="top"><a href="{{ url_for('messages_inbox') }}" aria-label="Back to messages">←</a>{% if conversation.is_group %}<div class="avatar">👥</div>{% else %}{% set other = namespace(user=none) %}{% for member in members %}{% if member.id != student.id %}{% set other.user = member %}{% endif %}{% endfor %}{% if other.user and other.user.profile_picture %}<img class="avatar" src="{{ other.user.profile_picture }}" alt="">{% else %}<div class="avatar">{{ (other.user.full_name if other.user else 'C')[:1]|upper }}</div>{% endif %}{% endif %}<div class="headinfo"><strong>{{ display_title }}</strong><div class="members">{% if conversation.is_group %}{{ members|length }} members{% else %}Private conversation{% endif %}</div></div><span id="newIndicator" class="new-indicator" role="status">New message</span></header>
 <div id="typingIndicator" class="typing-indicator" aria-live="polite"></div>
