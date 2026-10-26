@@ -1,56 +1,63 @@
-
-/* FUNAAB ONE emerald glass design system — progressive enhancement */
+/* FUNAAB ONE · Shared Liquid Glass UI
+   Progressive enhancement: visual-only rules, no route, data, or interaction changes. */
 :root {
-  --fo-glass: rgba(10, 35, 25, .76);
-  --fo-glass-border: rgba(107, 255, 181, .15);
-  --fo-glow: rgba(46, 229, 157, .13);
+  --fo-bg: #030a07;
+  --fo-surface: rgba(12, 28, 21, .78);
+  --fo-surface-2: rgba(19, 43, 31, .76);
+  --fo-text: #ecf8f1;
+  --fo-muted: rgba(226, 246, 236, .62);
+  --fo-green: #35f0a4;
+  --fo-green-soft: #a8ffd6;
+  --fo-border: rgba(255,255,255,.12);
+  --fo-shadow: 0 24px 70px rgba(0,0,0,.26);
+  --fo-ease: cubic-bezier(.22,1,.36,1);
 }
-html { scroll-behavior:smooth; }
+html { scroll-behavior:smooth; scroll-padding-top:24px; }
 body {
-  background-image:
-    radial-gradient(ellipse at 78% -12%, rgba(16,185,129,.105), transparent 38%),
-    radial-gradient(ellipse at 3% 48%, rgba(5,150,105,.055), transparent 30%);
-  background-attachment: fixed;
+  background-color:var(--fo-bg, #030a07);
+  background-image:radial-gradient(ellipse at 78% -12%,rgba(53,240,164,.13),transparent 38%),radial-gradient(ellipse at 3% 48%,rgba(5,150,105,.075),transparent 32%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
 }
-button, a, input, textarea, select { -webkit-tap-highlight-color:transparent; }
-button, input, textarea, select { max-width:100%; }
-button, .btn, a.btn {
-  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+button,a,input,textarea,select { -webkit-tap-highlight-color:transparent; }
+button,input,textarea,select { max-width:100%; }
+:where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.item,.empty,.hero-card,.auth-card,.form-card,.section-card,.result-card,.report-card) {
+  transition: border-color .28s ease, box-shadow .32s ease, background-color .28s ease, transform .32s var(--fo-ease);
 }
-button:hover, .btn:hover, a.btn:hover { border-color:rgba(73,240,169,.42); }
-input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
-  outline:2px solid rgba(46,229,157,.76);
-  outline-offset:2px;
+:where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.item,.auth-card,.form-card,.section-card,.result-card,.report-card) {
+  border-color:var(--fo-border, rgba(255,255,255,.12));
+  box-shadow:0 16px 44px rgba(0,0,0,.13),inset 0 1px rgba(255,255,255,.035);
 }
-.card, .panel, .post-card, .profile-card, .settings-card, .community-card, .conversation-card,
-.message-card, .event-card, .marketplace-card, .notification-card {
-  border-color:var(--fo-glass-border);
-  box-shadow:0 16px 40px rgba(0,0,0,.13), inset 0 1px rgba(255,255,255,.025);
-}
-@supports ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
-  .card, .panel, .profile-card, .settings-card, .community-card, .event-card,
-  .notification-card, .conversation-card {
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
+@supports ((backdrop-filter:blur(12px)) or (-webkit-backdrop-filter:blur(12px))) {
+  :where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.auth-card,.form-card,.section-card,.result-card,.report-card) {
+    backdrop-filter:blur(18px) saturate(145%);
+    -webkit-backdrop-filter:blur(18px) saturate(145%);
   }
 }
-img, video, iframe { max-width:100%; }
-textarea, input, select { min-width:0; }
-pre, code { overflow-wrap:anywhere; }
-table { max-width:100%; }
-@media (max-width: 760px) {
-  html { -webkit-text-size-adjust:100%; }
-  body { background-attachment:scroll; }
-  .content, main, .page-content, .container, .wrap { max-width:100%; }
-  img, video { height:auto; }
-  .card, .panel, .post-card, .profile-card, .settings-card, .community-card { border-radius:16px; }
-  button, .btn, a.btn { touch-action:manipulation; }
+/* Gentle entrance motion; avoids hiding content while fonts/images load. */
+@keyframes fo-rise-in { from { opacity:.01; transform:translate3d(0,12px,0); } to { opacity:1; transform:translate3d(0,0,0); } }
+@keyframes fo-glow-breathe { 0%,100% { box-shadow:0 0 0 rgba(53,240,164,0); } 50% { box-shadow:0 0 24px rgba(53,240,164,.10); } }
+main, .wrap, .shell, .layout, .page, .container { animation:fo-rise-in .55s var(--fo-ease) both; }
+:where(.panel,.card,.post,.post-card,.profile-card,.settings-card,.community-card,.conversation-card,.message-card,.event-card,.marketplace-card,.notification-card,.material,.auth-card,.form-card,.section-card,.result-card,.report-card):hover {
+  border-color:rgba(53,240,164,.25);
+  box-shadow:0 20px 52px rgba(0,0,0,.19),inset 0 1px rgba(255,255,255,.045);
 }
-@media (max-width: 480px) {
-  .content, .page-content, .container, .wrap { padding-left:12px; padding-right:12px; }
-  h1 { overflow-wrap:anywhere; }
+:where(button,.btn,a.btn,input[type=submit],input[type=button]) {
+  transition:transform .22s var(--fo-ease),border-color .22s ease,box-shadow .25s ease,filter .22s ease;
 }
-@media (prefers-reduced-motion: reduce) {
+:where(button,.btn,a.btn,input[type=submit],input[type=button]):hover { filter:brightness(1.06); }
+:where(button,.btn,a.btn,input[type=submit],input[type=button]):active { transform:scale(.975); }
+:where(.btn.primary,.primary,button[type=submit],input[type=submit]) { box-shadow:0 7px 24px rgba(53,240,164,.09); }
+:where(input:not([type=checkbox]):not([type=radio]):not([type=submit]),textarea,select) {
+  transition:border-color .2s ease,box-shadow .2s ease,background-color .2s ease;
+}
+:where(input,textarea,select):focus-visible,button:focus-visible,a:focus-visible {
+  outline:2px solid rgba(53,240,164,.78); outline-offset:3px;
+}
+img,video,iframe { max-width:100%; }
+img { height:auto; }
+::selection { background:rgba(53,240,164,.28); color:inherit; }
+@media (prefers-reduced-motion:reduce) {
   html { scroll-behavior:auto; }
-  *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+  *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; scroll-behavior:auto!important; transition-duration:.01ms!important; }
 }
