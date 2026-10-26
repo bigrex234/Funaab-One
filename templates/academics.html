@@ -11,6 +11,7 @@
     @media(max-width:480px){.upload-grid{grid-template-columns:1fr}.upload-grid .full{grid-column:auto}.search{grid-template-columns:1fr}.search .field:first-child{grid-column:auto}.material{padding:12px}.panel{padding:14px}}
   </style>
   <script>try{const t=localStorage.getItem('funaab-one-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
 </head>
 <body><div class="layout">
   <aside class="sidebar"><a class="brand" href="{{ url_for('dashboard') }}"><span class="logo">F1</span><span>FUNAAB ONE</span></a><div class="nav-label">Campus</div><nav class="nav"><a href="{{ url_for('dashboard') }}">⌂ Campus feed</a><a href="{{ url_for('general_search') }}">⌕ Smart Search</a><a href="{{ url_for('communities') }}">♧ Communities</a><a href="{{ url_for('messages_inbox') }}">✉ Messages</a><a class="active" href="{{ url_for('academics') }}">▤ Academic Materials</a><a href="{{ url_for('market_place') }}">◇ Marketplace</a><a href="{{ url_for('profile', username=student.username) }}">◎ My Profile</a></nav></aside>
