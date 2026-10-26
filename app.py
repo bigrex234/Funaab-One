@@ -2068,10 +2068,10 @@ def find_students():
 @app.route("/api/search-suggestions")
 @login_required
 def search_suggestions():
-    """Small, permission-aware search results for the live search box."""
+    """Permission-aware live suggestions across the campus platform."""
     query = request.args.get("q", "").strip()[:100]
     if len(query) < 2:
-        return jsonify({"students": [], "posts": []})
+        return jsonify({"students": [], "posts": [], "communities": [], "materials": [], "marketplace": []})
 
     hidden_user_ids = blocked_user_ids_for(current_user.id)
     escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
@@ -2085,33 +2085,59 @@ def search_suggestions():
     )
     if hidden_user_ids:
         user_statement = user_statement.where(User.id.not_in(hidden_user_ids))
-    users = db.session.scalars(user_statement.order_by(User.username.asc()).limit(6)).all()
+    users = db.session.scalars(user_statement.order_by(User.username.asc()).limit(4)).all()
 
-    post_statement = select(Post).join(User, Post.user_id == User.id).where(
-        Post.body.ilike(pattern, escape="\\"),
-        User.id != current_user.id,
-    )
+    post_statement = select(Post).join(User, Post.user_id == User.id).where(Post.body.ilike(pattern, escape="\\"))
     if hidden_user_ids:
         post_statement = post_statement.where(User.id.not_in(hidden_user_ids))
-    matching_posts = db.session.scalars(
-        post_statement.order_by(Post.created_at.desc()).limit(6)
-    ).all()
+    matching_posts = db.session.scalars(post_statement.order_by(Post.created_at.desc()).limit(4)).all()
+
+    community_statement = select(Community).where(or_(
+        Community.name.ilike(pattern, escape="\\"),
+        Community.description.ilike(pattern, escape="\\"),
+        Community.category.ilike(pattern, escape="\\"),
+    ))
+    if hidden_user_ids:
+        community_statement = community_statement.where(Community.creator_id.not_in(hidden_user_ids))
+    groups = db.session.scalars(community_statement.order_by(Community.created_at.desc()).limit(4)).all()
+
+    material_statement = select(AcademicMaterial).where(or_(
+        AcademicMaterial.title.ilike(pattern, escape="\\"),
+        AcademicMaterial.course_code.ilike(pattern, escape="\\"),
+        AcademicMaterial.course_name.ilike(pattern, escape="\\"),
+        AcademicMaterial.department.ilike(pattern, escape="\\"),
+        AcademicMaterial.description.ilike(pattern, escape="\\"),
+    ))
+    if hidden_user_ids:
+        material_statement = material_statement.where(AcademicMaterial.user_id.not_in(hidden_user_ids))
+    materials = db.session.scalars(material_statement.order_by(AcademicMaterial.created_at.desc()).limit(4)).all()
+
+    listing_statement = select(MarketListing).join(User, MarketListing.user_id == User.id).where(
+        MarketListing.status == "active",
+        or_(MarketListing.title.ilike(pattern, escape="\\"),
+            MarketListing.description.ilike(pattern, escape="\\"),
+            MarketListing.category.ilike(pattern, escape="\\"),
+            User.username.ilike(pattern, escape="\\"),
+            User.full_name.ilike(pattern, escape="\\")),
+    )
+    if hidden_user_ids:
+        listing_statement = listing_statement.where(MarketListing.user_id.not_in(hidden_user_ids))
+    listings = db.session.scalars(listing_statement.order_by(MarketListing.created_at.desc()).limit(4)).all()
 
     return jsonify({
-        "students": [{
-            "name": user.full_name or user.username,
-            "username": user.username,
-            "department": user.department or "",
-            "avatar": user.profile_picture or "",
-            "url": url_for("profile", username=user.username),
-        } for user in users],
-        "posts": [{
-            "id": post.id,
-            "text": (post.body or "").strip()[:180],
-            "username": post.author.username,
-            "name": post.author.full_name or post.author.username,
-            "url": url_for("general_search", q=query) + f"#post-{post.id}",
-        } for post in matching_posts],
+        "students": [{"name": user.full_name or user.username, "username": user.username,
+                      "department": user.department or "", "avatar": user.profile_picture or "",
+                      "url": url_for("profile", username=user.username)} for user in users],
+        "posts": [{"id": post.id, "text": (post.body or "").strip()[:180],
+                   "username": post.author.username, "name": post.author.full_name or post.author.username,
+                   "url": url_for("general_search", q=query, type="posts") + f"#post-{post.id}"} for post in matching_posts],
+        "communities": [{"name": group.name, "category": group.category,
+                         "description": group.description or "",
+                         "url": url_for("community_detail", community_id=group.id)} for group in groups],
+        "materials": [{"title": item.title, "course_code": item.course_code,
+                       "department": item.department, "url": url_for("download_academic_material", material_id=item.id)} for item in materials],
+        "marketplace": [{"title": item.title, "category": item.category,
+                         "price": item.price, "url": url_for("market_place", q=item.title)} for item in listings],
     })
 
 
@@ -2119,36 +2145,72 @@ def search_suggestions():
 @login_required
 def general_search():
     query = request.args.get("q", "").strip()[:100]
+    active_type = request.args.get("type", "all").strip().lower()
+    if active_type not in {"all", "students", "posts", "communities", "materials", "marketplace"}:
+        active_type = "all"
     hidden_user_ids = blocked_user_ids_for(current_user.id)
-    students = []
-    posts = []
+    students, posts, groups, materials, listings = [], [], [], [], []
 
     if query:
         escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         pattern = f"%{escaped}%"
-        user_statement = select(User).where(
-            User.id != current_user.id,
-            or_(User.username.ilike(pattern, escape="\\"),
-                User.full_name.ilike(pattern, escape="\\"),
-                User.department.ilike(pattern, escape="\\")),
-        )
-        if hidden_user_ids:
-            user_statement = user_statement.where(User.id.not_in(hidden_user_ids))
-        students = db.session.scalars(user_statement.order_by(User.username.asc()).limit(30)).all()
+        if active_type in {"all", "students"}:
+            user_statement = select(User).where(
+                User.id != current_user.id,
+                or_(User.username.ilike(pattern, escape="\\"),
+                    User.full_name.ilike(pattern, escape="\\"),
+                    User.department.ilike(pattern, escape="\\")),
+            )
+            if hidden_user_ids:
+                user_statement = user_statement.where(User.id.not_in(hidden_user_ids))
+            students = db.session.scalars(user_statement.order_by(User.username.asc()).limit(30)).all()
 
-        post_statement = select(Post).join(User, Post.user_id == User.id).where(
-            Post.body.ilike(pattern, escape="\\"),
-            User.id != current_user.id,
-        )
-        if hidden_user_ids:
-            post_statement = post_statement.where(User.id.not_in(hidden_user_ids))
-        posts = db.session.scalars(post_statement.order_by(Post.created_at.desc()).limit(50)).all()
+        if active_type in {"all", "posts"}:
+            post_statement = select(Post).join(User, Post.user_id == User.id).where(Post.body.ilike(pattern, escape="\\"))
+            if hidden_user_ids:
+                post_statement = post_statement.where(User.id.not_in(hidden_user_ids))
+            posts = db.session.scalars(post_statement.order_by(Post.created_at.desc()).limit(40)).all()
+
+        if active_type in {"all", "communities"}:
+            community_statement = select(Community).where(or_(
+                Community.name.ilike(pattern, escape="\\"),
+                Community.description.ilike(pattern, escape="\\"),
+                Community.category.ilike(pattern, escape="\\"),
+            ))
+            if hidden_user_ids:
+                community_statement = community_statement.where(Community.creator_id.not_in(hidden_user_ids))
+            groups = db.session.scalars(community_statement.order_by(Community.created_at.desc()).limit(30)).all()
+
+        if active_type in {"all", "materials"}:
+            material_statement = select(AcademicMaterial).where(or_(
+                AcademicMaterial.title.ilike(pattern, escape="\\"),
+                AcademicMaterial.course_code.ilike(pattern, escape="\\"),
+                AcademicMaterial.course_name.ilike(pattern, escape="\\"),
+                AcademicMaterial.department.ilike(pattern, escape="\\"),
+                AcademicMaterial.description.ilike(pattern, escape="\\"),
+            ))
+            if hidden_user_ids:
+                material_statement = material_statement.where(AcademicMaterial.user_id.not_in(hidden_user_ids))
+            materials = db.session.scalars(material_statement.order_by(AcademicMaterial.created_at.desc()).limit(30)).all()
+
+        if active_type in {"all", "marketplace"}:
+            listing_statement = select(MarketListing).join(User, MarketListing.user_id == User.id).where(
+                MarketListing.status == "active",
+                or_(MarketListing.title.ilike(pattern, escape="\\"),
+                    MarketListing.description.ilike(pattern, escape="\\"),
+                    MarketListing.category.ilike(pattern, escape="\\"),
+                    User.username.ilike(pattern, escape="\\"),
+                    User.full_name.ilike(pattern, escape="\\")),
+            )
+            if hidden_user_ids:
+                listing_statement = listing_statement.where(MarketListing.user_id.not_in(hidden_user_ids))
+            listings = db.session.scalars(listing_statement.order_by(MarketListing.created_at.desc()).limit(30)).all()
 
     return render_template(
-        "search.html", student=current_user, query=query,
-        students=students, posts=posts,
+        "search.html", student=current_user, query=query, active_type=active_type,
+        students=students, posts=posts, communities=groups, materials=materials,
+        listings=listings,
     )
-
 
 @app.route("/u/<string:username>/follow", methods=["POST"])
 @login_required
