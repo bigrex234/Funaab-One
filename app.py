@@ -686,6 +686,17 @@ class ReflexRushScore(db.Model):
     user = db.relationship("User", backref=db.backref("reflex_rush_scores", lazy="dynamic", cascade="all, delete-orphan"))
 
 
+class ArcadeGameScore(db.Model):
+    """Best-effort score history for additional arcade games; separate from Reflex Rush records."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    game_key = db.Column(db.String(32), nullable=False, index=True)
+    score = db.Column(db.Integer, nullable=False, index=True)
+    duration_ms = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+    user = db.relationship("User", backref=db.backref("arcade_game_scores", lazy="dynamic", cascade="all, delete-orphan"))
+
+
 class AdminAction(db.Model):
     """Audit trail for administrative actions; additive and append-only."""
     id = db.Column(db.Integer, primary_key=True)
@@ -1544,9 +1555,10 @@ def logout():
 @login_required
 def arcade():
     """FUNAAB ONE Arcade lobby: playable games and clearly marked upcoming titles."""
-    playable_games = 1
+    playable_games = 3
     players_count = db.session.query(db.func.count(db.distinct(ReflexRushScore.user_id))).scalar() or 0
-    top_score = db.session.query(db.func.max(ReflexRushScore.score)).scalar() or 0
+    players_count += db.session.query(db.func.count(db.distinct(ArcadeGameScore.user_id))).scalar() or 0
+    top_score = max(db.session.query(db.func.max(ReflexRushScore.score)).scalar() or 0, db.session.query(db.func.max(ArcadeGameScore.score)).scalar() or 0)
     return render_template(
         "arcade.html",
         student=current_user,
@@ -1623,6 +1635,64 @@ def reflex_rush_submit_score():
     rank = db.session.query(db.func.count()).select_from(best_scores).filter(
         best_scores.c.best_score > best_score
     ).scalar() + 1
+    return jsonify(ok=True, best_score=best_score, rank=rank)
+
+
+@app.route("/games/arrow-master", methods=["GET"])
+@login_required
+def arrow_master():
+    leaderboard = db.session.query(User, db.func.max(ArcadeGameScore.score).label("best_score")).join(ArcadeGameScore, ArcadeGameScore.user_id == User.id).filter(ArcadeGameScore.game_key == "arrow-master", User.is_suspended.is_(False)).group_by(User.id).order_by(db.func.max(ArcadeGameScore.score).desc(), User.username.asc()).limit(10).all()
+    my_best = db.session.query(db.func.max(ArcadeGameScore.score)).filter(ArcadeGameScore.user_id == current_user.id, ArcadeGameScore.game_key == "arrow-master").scalar() or 0
+    return render_template("arrow_master.html", student=current_user, leaderboard=leaderboard, my_best=my_best)
+
+
+@app.route("/games/arrow-master/score", methods=["POST"])
+@login_required
+def arrow_master_submit_score():
+    return _save_arcade_score("arrow-master", 0, 1200, 25000, 45000, 10)
+
+
+@app.route("/games/campus-runner", methods=["GET"])
+@login_required
+def campus_runner():
+    leaderboard = db.session.query(User, db.func.max(ArcadeGameScore.score).label("best_score")).join(ArcadeGameScore, ArcadeGameScore.user_id == User.id).filter(ArcadeGameScore.game_key == "campus-runner", User.is_suspended.is_(False)).group_by(User.id).order_by(db.func.max(ArcadeGameScore.score).desc(), User.username.asc()).limit(10).all()
+    my_best = db.session.query(db.func.max(ArcadeGameScore.score)).filter(ArcadeGameScore.user_id == current_user.id, ArcadeGameScore.game_key == "campus-runner").scalar() or 0
+    return render_template("campus_runner.html", student=current_user, leaderboard=leaderboard, my_best=my_best)
+
+
+@app.route("/games/campus-runner/score", methods=["POST"])
+@login_required
+def campus_runner_submit_score():
+    return _save_arcade_score("campus-runner", 0, 5000, 25000, 45000, 0)
+
+
+def _save_arcade_score(game_key, minimum, maximum, min_duration, max_duration, score_step):
+    """Shared authenticated, CSRF-protected score submission for the arcade games."""
+    try:
+        score = int(request.form.get("score", "-1"))
+        duration_ms = int(request.form.get("duration_ms", "0"))
+    except (TypeError, ValueError):
+        return jsonify(ok=False, error="Invalid score submission."), 400
+    if score < minimum or score > maximum or duration_ms < min_duration or duration_ms > max_duration:
+        return jsonify(ok=False, error="That run could not be verified. Please play a new round."), 400
+    if score_step and score % score_step != 0:
+        return jsonify(ok=False, error="That score looks invalid. Please play a new round."), 400
+    # Keep submitted scores within plausible per-round limits. Gameplay remains client-side.
+    if game_key == "arrow-master" and score > 10 * max(1, duration_ms // 250):
+        return jsonify(ok=False, error="That score looks invalid. Please play a new round."), 400
+    if game_key == "campus-runner" and score > duration_ms // 4 + 100:
+        return jsonify(ok=False, error="That score looks invalid. Please play a new round."), 400
+    record = ArcadeGameScore(user_id=current_user.id, game_key=game_key, score=score, duration_ms=duration_ms)
+    db.session.add(record)
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Arcade score save failed for %s", game_key)
+        return jsonify(ok=False, error="We couldn't save your score. Please try again."), 500
+    best_score = db.session.query(db.func.max(ArcadeGameScore.score)).filter(ArcadeGameScore.user_id == current_user.id, ArcadeGameScore.game_key == game_key).scalar() or 0
+    best_scores = db.session.query(ArcadeGameScore.user_id.label("user_id"), db.func.max(ArcadeGameScore.score).label("best_score")).join(User, User.id == ArcadeGameScore.user_id).filter(ArcadeGameScore.game_key == game_key, User.is_suspended.is_(False)).group_by(ArcadeGameScore.user_id).subquery()
+    rank = (db.session.query(db.func.count()).select_from(best_scores).filter(best_scores.c.best_score > best_score).scalar() or 0) + 1
     return jsonify(ok=True, best_score=best_score, rank=rank)
 
 
