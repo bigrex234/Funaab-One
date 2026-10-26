@@ -20,9 +20,11 @@ label{display:block;font-weight:650;font-size:13px;margin:17px 0 7px}input,selec
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 <label for="full_name">Full name</label><input id="full_name" name="full_name" maxlength="100" required value="{{ student.full_name }}">
 <label for="profile_picture">Profile picture (optional)</label><input id="profile_picture" name="profile_picture" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><p class="muted">JPG, PNG, WEBP, or GIF · Maximum 5 MB. Leave empty to keep your current picture.</p>
+<label for="cover_photo">Cover photo (optional)</label><input id="cover_photo" name="cover_photo" type="file" accept="image/jpeg,image/png,image/webp"><p class="muted">JPG, PNG, or WEBP · Maximum 5 MB. Wide images look best.</p>
 <label for="department">Department</label><select id="department" name="department" required><option value="">Select department</option>{% for group,programmes in department_groups.items() %}<optgroup label="{{ group }}">{% for programme in programmes %}<option value="{{ programme }}" {% if student.department==programme %}selected{% endif %}>{{ programme }}</option>{% endfor %}</optgroup>{% endfor %}</select>
 <label for="level">Academic level</label><select id="level" name="level" required>{% for level in ['100','200','300','400','500','600'] %}<option value="{{ level }}" {% if student.level==level %}selected{% endif %}>{{ level }} Level</option>{% endfor %}</select>
 <label for="bio">Bio (optional)</label><textarea id="bio" name="bio" maxlength="300" placeholder="Tell campus a little about yourself…">{{ student.bio or '' }}</textarea><p class="muted">Up to 300 characters.</p>
+<label for="interests">Interests (comma-separated)</label><input id="interests" name="interests" maxlength="500" value="{{ student.interests or '' }}" placeholder="Photography, coding, football, fashion"><p class="muted">Add up to 8 interests. Separate each one with a comma.</p>
 <button class="submit" type="submit" id="saveProfile">Save changes</button></form></section></main>
 <script>
 (() => {
