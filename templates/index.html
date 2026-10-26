@@ -796,11 +796,80 @@
                 transition: none !important;
             }
         }
-    </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
+    
+
+/* FUNAAB ONE Dashboard-matched Liquid Glass system */
+@property --fo-hue { syntax:"<angle>"; inherits:false; initial-value:0deg; }
+:root{
+ --bg:#030a07;--text:#ecf8f1;--muted:rgba(226,246,236,.62);
+ --green:#35f0a4;--g:#35f0a4;--g2:#a8ffd6;--gd:#0f8f5a;--on-green:#03150c;
+ --surface:rgba(12,29,22,.70);--surface2:rgba(19,43,31,.76);
+ --glass:rgba(255,255,255,.055);--glass2:rgba(255,255,255,.095);
+ --border:rgba(255,255,255,.12);--line:rgba(255,255,255,.12);
+ --shadow:0 24px 70px rgba(0,0,0,.30);--radius:24px;
+}
+[data-theme="light"]{
+ --bg:#eaf5ee;--text:#0d2a1c;--muted:rgba(13,42,28,.65);
+ --green:#0a9d62;--g:#0a9d62;--g2:#b5f7d2;--gd:#087448;--on-green:#fff;
+ --surface:rgba(255,255,255,.62);--surface2:rgba(241,251,245,.78);
+ --glass:rgba(255,255,255,.58);--glass2:rgba(255,255,255,.82);
+ --border:rgba(10,90,55,.15);--line:rgba(10,90,55,.15);
+ --shadow:0 24px 60px rgba(10,70,42,.13);
+}
+html,body{max-width:100%;overflow-x:clip}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",sans-serif;letter-spacing:-.01em}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(ellipse at 12% -8%,rgba(53,240,164,.19),transparent 38%),radial-gradient(ellipse at 95% 35%,rgba(11,122,74,.17),transparent 32%),radial-gradient(ellipse at 48% 110%,rgba(93,240,176,.10),transparent 38%);background-attachment:fixed}
+a,button{ -webkit-tap-highlight-color:transparent}
+::selection{background:rgba(53,240,164,.28);color:var(--text)}
+.header{top:12px;margin:12px auto 0;width:calc(100% - 28px);max-width:1450px;border:1px solid var(--line);border-radius:25px;background:color-mix(in srgb,var(--bg) 60%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 18px 55px rgba(0,0,0,.20);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);animation:fo-drop .8s cubic-bezier(.22,1,.36,1) both}
+.nav{min-height:70px}
+.brand{font-weight:800}
+.brand-mark{border-radius:14px;background:linear-gradient(140deg,var(--g2),var(--g) 52%,var(--gd));box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 28px rgba(53,240,164,.28);animation:fo-glow 4s ease-in-out infinite}
+.nav-links a{transition:color .25s,transform .3s}
+.nav-links a:hover{color:var(--g);transform:translateY(-1px)}
+.btn,.theme-btn,.menu-btn{border:1px solid var(--line);border-radius:999px;background:var(--glass2);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.14);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .25s,filter .25s}
+.btn:hover,.theme-btn:hover,.menu-btn:hover{transform:translateY(-2px);border-color:var(--g);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 28px rgba(53,240,164,.16)}
+.btn-primary{color:var(--on-green);background:linear-gradient(135deg,var(--g2),var(--g) 55%,var(--gd));border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 10px 30px rgba(53,240,164,.24)}
+.btn-primary:hover{filter:brightness(1.07);transform:translateY(-3px) scale(1.015)}
+.hero{padding-top:105px}
+.hero h1{background:linear-gradient(110deg,var(--text) 20%,var(--g) 50%,var(--text) 80%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:fo-sheen 7s ease-in-out infinite}
+.hero h1 span{color:var(--g);-webkit-text-fill-color:var(--g)}
+.preview,.feature,.about-visual,.about-pill,.developer-card,.cta-box,.preview-hero,.preview-stat,.preview-post,.highlight-icon{
+ border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),var(--shadow)
+}
+.preview{border-radius:30px;animation:fo-rise .9s .12s cubic-bezier(.22,1,.36,1) both}
+.preview-hero{background:radial-gradient(circle at 90% 0%,rgba(53,240,164,.20),transparent 55%),rgba(13,38,26,.62);border-radius:20px}
+.preview-stat,.preview-post{background:rgba(255,255,255,.045);border-radius:15px}
+.highlights{background:rgba(255,255,255,.025);border-color:var(--line);backdrop-filter:blur(18px)}
+.highlight-icon{border-radius:15px;color:var(--g)}
+.feature{position:relative;overflow:hidden;border-radius:24px;transition:transform .4s cubic-bezier(.34,1.56,.64,1),border-color .3s,box-shadow .3s}
+.feature::after,.developer-card::after,.cta-box::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%),rgba(53,240,164,.13),transparent 48%)}
+.feature:hover{transform:translateY(-6px);border-color:rgba(53,240,164,.38);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 25px 65px rgba(0,0,0,.25)}
+.feature:hover::after,.developer-card:hover::after,.cta-box:hover::after{opacity:1}
+.feature-icon{border:1px solid rgba(53,240,164,.18);border-radius:16px;background:rgba(53,240,164,.09);color:var(--g)}
+.about-section{background:rgba(255,255,255,.025);border-color:var(--line);backdrop-filter:blur(16px)}
+.about-visual{background:radial-gradient(circle at 15% 10%,rgba(53,240,164,.17),transparent 45%),rgba(6,22,14,.58);border-radius:28px}
+.about-pill{border-radius:17px}
+.developer-card{position:relative;overflow:hidden;border-radius:28px;background:radial-gradient(circle at 0% 0%,rgba(53,240,164,.13),transparent 45%),var(--glass)}
+.rex-avatar{border-radius:28px;background:linear-gradient(135deg,rgba(53,240,164,.18),rgba(255,255,255,.035));box-shadow:0 18px 42px rgba(0,0,0,.22)}
+.dev-tag{border-color:var(--line);background:rgba(255,255,255,.04);border-radius:999px}
+.cta-box{position:relative;border-radius:30px;background:radial-gradient(circle at 50% 0%,rgba(53,240,164,.17),transparent 60%),var(--glass)}
+footer,.footer-main{border-color:var(--line)}
+.status-dot{box-shadow:0 0 0 5px rgba(53,240,164,.10);animation:fo-pulse 2.4s ease-in-out infinite}
+@keyframes fo-drop{from{opacity:0;transform:translateY(-22px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes fo-rise{from{opacity:0;transform:translateY(28px) scale(.985);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes fo-glow{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 12px 38px rgba(53,240,164,.38);transform:translateY(-1px)}}
+@keyframes fo-sheen{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+@keyframes fo-pulse{50%{box-shadow:0 0 0 8px rgba(53,240,164,.025)}}
+@media(max-width:760px){.header{top:6px;margin-top:6px;width:calc(100% - 12px);border-radius:20px}.hero{padding-top:75px}.preview{transform:none}.feature:hover{transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+</style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css', v='2') }}">
 </head>
 
 <body>
+<div class="fo-ambient" aria-hidden="true"></div>
 
 <header class="header">
     <div class="container nav">
@@ -1277,6 +1346,20 @@
     // Automatically update the copyright year
     document.getElementById("year").textContent =
         new Date().getFullYear();
+</script>
+
+
+<script>
+(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.feature,.preview,.developer-card,.cta-box,.profile-card,.post').forEach(el => {
+    el.addEventListener('pointermove', event => {
+      const rect = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${event.clientX - rect.left}px`);
+      el.style.setProperty('--my', `${event.clientY - rect.top}px`);
+    }, { passive: true });
+  });
+})();
 </script>
 
 </body>
