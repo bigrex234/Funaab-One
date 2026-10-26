@@ -599,7 +599,7 @@ textarea::placeholder, input::placeholder { color: var(--muted); }
         <a href="{{ url_for('blocked_users') }}">⊘ Blocked Students</a>
         <a href="{{ url_for('market_place') }}">◇ Marketplace</a>
         <a href="{{ url_for('academics') }}">▤ Academic Materials</a>
-        <a href="{{ url_for('reflex_rush') }}">🎮 Reflex Rush</a>
+        <a href="{{ url_for('arcade') }}">🎮 Arcade</a>
         <a href="{{ url_for('communities') }}">♧ Communities</a>
         <a class="messages-nav" href="{{ url_for('messages_inbox') }}">▱ Messages{% if unread_message_count %}<span class="nav-unread-badge" aria-label="{{ unread_message_count }} unread messages">{{ unread_message_count if unread_message_count < 100 else '99+' }}</span>{% endif %}</a>
         <a class="messages-nav" href="{{ url_for('notifications_center') }}">♢ Notifications{% if unread_notification_count %}<span class="nav-unread-badge" aria-label="{{ unread_notification_count }} unread notifications">{{ unread_notification_count if unread_notification_count < 100 else '99+' }}</span>{% endif %}</a>
