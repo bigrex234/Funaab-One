@@ -10,6 +10,37 @@
   <style>
     :root{color-scheme:dark;--bg:#08110e;--surface:#101c17;--surface2:#17251f;--text:#edf7f0;--muted:#9bb0a4;--border:#263b30;--green:#55e6a5;--danger:#ff8d8d}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}a{color:inherit;text-decoration:none}.wrap{max-width:900px;margin:auto;padding:24px 16px 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}.brand,h1,h2{font-family:'Space Grotesk',sans-serif}.brand{font-weight:700;display:flex;align-items:center;gap:9px}.logo{display:grid;place-items:center;background:var(--green);color:#04150d;width:36px;height:36px;border-radius:12px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;cursor:pointer;font:inherit;font-size:14px}.primary{background:var(--green);color:#04150d;border-color:transparent}.panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:clamp(16px,3vw,26px)}.head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}.head h1{margin:0;font-size:clamp(25px,4vw,34px)}.muted{color:var(--muted)}.count{font-size:12px;padding:5px 9px;border-radius:999px;background:var(--surface2);color:var(--green);font-weight:700}.notice{display:flex;gap:13px;align-items:flex-start;padding:15px 12px;border-bottom:1px solid var(--border);border-radius:10px}.notice:last-child{border-bottom:0}.notice.unread{background:rgba(85,230,165,.07)}.avatar{width:43px;height:43px;flex:0 0 43px;border-radius:50%;object-fit:cover;background:var(--green);color:#04150d;display:grid;place-items:center;font-weight:800;overflow:hidden}.avatar img{width:100%;height:100%;object-fit:cover}.body{flex:1;min-width:0}.body p{margin:1px 0 7px;line-height:1.5;overflow-wrap:anywhere}.time{font-size:12px;color:var(--muted)}.open-form{margin:0}.empty{text-align:center;padding:48px 16px;color:var(--muted)}.empty strong{display:block;color:var(--text);font-size:18px;margin-bottom:7px}.flash{background:var(--surface2);padding:11px 14px;border-radius:10px;margin:8px 0 14px}.flash.error{color:var(--danger)}@media(max-width:560px){.top{align-items:flex-start;flex-direction:column}.head{align-items:flex-start;flex-direction:column}.head .btn{width:100%}.notice{padding:13px 3px}.avatar{width:38px;height:38px;flex-basis:38px}}
+
+    /* Notifications 2.0 — emerald glass activity center */
+    body{background:radial-gradient(ellipse at 70% -12%,rgba(46,229,157,.16),transparent 38%),radial-gradient(ellipse at 0% 55%,rgba(16,185,129,.08),transparent 34%),var(--bg);background-attachment:fixed}
+    .wrap{max-width:980px;padding-top:30px}
+    .top{margin-bottom:25px}
+    .brand{letter-spacing:-.035em}
+    .logo{box-shadow:0 0 0 5px rgba(85,230,165,.10),0 8px 25px rgba(85,230,165,.18)}
+    .panel{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(17,42,31,.88),rgba(8,24,18,.91));border-color:rgba(132,255,194,.17);box-shadow:0 24px 65px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.04);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+    .head h1{letter-spacing:-.045em}
+    .btn{transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
+    .btn:hover{transform:translateY(-1px);border-color:rgba(85,230,165,.55);box-shadow:0 8px 24px rgba(46,229,157,.09)}
+    .primary{box-shadow:0 8px 24px rgba(46,229,157,.16)}
+    .notification-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 15px}
+    .filter-rail{display:flex;gap:7px;flex-wrap:wrap}
+    .filter-btn{border:1px solid var(--border);background:rgba(255,255,255,.025);color:var(--muted);padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s ease}
+    .filter-btn:hover,.filter-btn[aria-pressed="true"]{color:var(--green);border-color:rgba(85,230,165,.38);background:rgba(85,230,165,.10)}
+    .notice{position:relative;align-items:center;padding:16px 13px;margin:5px 0;border:1px solid transparent;border-radius:15px;transition:background .18s,border-color .18s,transform .18s}
+    .notice:hover{background:rgba(255,255,255,.025);border-color:rgba(132,255,194,.12);transform:translateY(-1px)}
+    .notice.unread{background:linear-gradient(100deg,rgba(85,230,165,.095),rgba(85,230,165,.025));border-color:rgba(85,230,165,.12)}
+    .notice.unread:before{content:"";position:absolute;left:0;top:19px;bottom:19px;width:3px;border-radius:4px;background:var(--green);box-shadow:0 0 14px rgba(85,230,165,.4)}
+    .avatar{border:2px solid rgba(85,230,165,.2);box-shadow:0 0 0 3px rgba(85,230,165,.045)}
+    .body p{font-size:14px}
+    .count{white-space:nowrap}
+    .time{font-size:11px}
+    .notice .btn{white-space:nowrap;padding:9px 12px;font-size:12px}
+    .empty{padding:58px 16px}
+    .empty:before{content:"✦";display:grid;place-items:center;width:56px;height:56px;margin:0 auto 14px;border-radius:18px;background:rgba(85,230,165,.10);color:var(--green);font-size:24px}
+    [data-kind-hidden="true"]{display:none!important}
+    @media(max-width:560px){body{background-attachment:scroll}.wrap{padding-top:17px}.notice{align-items:flex-start;gap:10px;padding:13px 8px}.notice .btn{padding:8px 9px}.body p{font-size:13px}.notification-tools{align-items:flex-start}.filter-rail{gap:5px}.filter-btn{padding:7px 10px}}
+    @media(prefers-reduced-motion:reduce){.notice,.btn,.filter-btn{transition:none!important}}
+
   </style>
 </head>
 <body>
@@ -31,6 +62,16 @@
         </form>
         {% endif %}
       </div>
+      <div class="notification-tools" aria-label="Notification filters">
+        <div class="filter-rail" role="group" aria-label="Filter notifications">
+          <button class="filter-btn" type="button" data-filter="all" aria-pressed="true">All <span>{{ notifications|length }}</span></button>
+          <button class="filter-btn" type="button" data-filter="unread" aria-pressed="false">Unread <span>{{ unread_notification_count }}</span></button>
+          <button class="filter-btn" type="button" data-filter="follow" aria-pressed="false">Follows</button>
+          <button class="filter-btn" type="button" data-filter="social" aria-pressed="false">Likes & comments</button>
+          <button class="filter-btn" type="button" data-filter="message" aria-pressed="false">Messages</button>
+        </div>
+        <span class="muted" id="visibleNotificationCount" aria-live="polite">{{ notifications|length }} notifications</span>
+      </div>
       {% if notifications %}
         {% for notification in notifications %}
           {% set actor_name = notification.actor.full_name if notification.actor else 'A student' %}
@@ -41,7 +82,9 @@
           {% elif notification.kind == 'reply' %}{% set activity = 'replied to your community discussion.' %}
           {% elif notification.kind == 'message' %}{% set activity = 'sent you a message.' %}
           {% else %}{% set activity = 'interacted with you.' %}{% endif %}
-          <div class="notice {{ 'unread' if not notification.is_read else '' }}">
+          <div class="notice {{ 'unread' if not notification.is_read else '' }}"
+               data-notification-kind="{{ notification.kind }}"
+               data-notification-read="{{ 'false' if not notification.is_read else 'true' }}">
             <a class="avatar" href="{{ url_for('profile', username=actor_username) if actor_username else url_for('dashboard') }}" aria-label="Open profile">
               {% if notification.actor and notification.actor.profile_picture %}<img src="{{ notification.actor.profile_picture }}" alt="">
               {% else %}{{ actor_name[:1]|upper }}{% endif %}
@@ -61,5 +104,34 @@
       {% endif %}
     </section>
   </main>
+
+<script>
+(() => {
+  const buttons = [...document.querySelectorAll('[data-filter]')];
+  const rows = [...document.querySelectorAll('.notice[data-notification-kind]')];
+  const count = document.getElementById('visibleNotificationCount');
+  if (!buttons.length || !rows.length) return;
+  const matches = (row, filter) => {
+    const kind = row.dataset.notificationKind;
+    if (filter === 'unread') return row.dataset.notificationRead === 'false';
+    if (filter === 'follow') return kind === 'follow';
+    if (filter === 'social') return ['like', 'comment', 'reply'].includes(kind);
+    if (filter === 'message') return kind === 'message';
+    return true;
+  };
+  buttons.forEach(button => button.addEventListener('click', () => {
+    const filter = button.dataset.filter;
+    buttons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    let visible = 0;
+    rows.forEach(row => {
+      const show = matches(row, filter);
+      row.dataset.kindHidden = String(!show);
+      if (show) visible++;
+    });
+    if (count) count.textContent = `${visible} notification${visible === 1 ? '' : 's'}`;
+  }));
+})();
+</script>
+
 </body>
 </html>
