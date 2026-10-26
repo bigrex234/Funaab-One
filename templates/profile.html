@@ -126,10 +126,63 @@
     @media(max-width:600px){body{background-attachment:scroll}.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.stat{padding:10px 8px;align-items:center}.stat strong{font-size:17px}.stat span{text-align:center}.post-tabs{width:100%}.post-tab{flex:1;padding:9px 8px}.content-head h2{font-size:20px}}
     @media(prefers-reduced-motion:reduce){.stat,.post,.post-tab{transition:none!important}}
 
-  </style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css') }}">
+  
+
+/* FUNAAB ONE Dashboard-matched Liquid Glass system */
+:root{
+ --bg:#030a07;--text:#ecf8f1;--muted:rgba(226,246,236,.62);--green:#35f0a4;--g:#35f0a4;--g2:#a8ffd6;--gd:#0f8f5a;--on-green:#03150c;
+ --panel:rgba(12,29,22,.72);--panel2:rgba(19,43,31,.76);--line:rgba(255,255,255,.12);--border:rgba(255,255,255,.12);
+ --glass:rgba(255,255,255,.055);--glass2:rgba(255,255,255,.095);--shadow:0 24px 70px rgba(0,0,0,.30);--radius:26px;
+}
+[data-theme="light"]{--bg:#eaf5ee;--text:#0d2a1c;--muted:rgba(13,42,28,.65);--green:#0a9d62;--g:#0a9d62;--g2:#b5f7d2;--gd:#087448;--on-green:#fff;--panel:rgba(255,255,255,.72);--panel2:rgba(241,251,245,.82);--line:rgba(10,90,55,.15);--border:rgba(10,90,55,.15);--glass:rgba(255,255,255,.58);--glass2:rgba(255,255,255,.82);--shadow:0 24px 60px rgba(10,70,42,.13)}
+html,body{max-width:100%;overflow-x:clip}
+body{position:relative;isolation:isolate;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",sans-serif;letter-spacing:-.01em}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(ellipse at 12% -8%,rgba(53,240,164,.19),transparent 38%),radial-gradient(ellipse at 95% 35%,rgba(11,122,74,.17),transparent 32%),radial-gradient(ellipse at 48% 110%,rgba(93,240,176,.10),transparent 38%);background-attachment:fixed}
+.shell{width:min(1180px,calc(100% - 44px));padding-top:18px}
+.topbar{position:sticky;top:12px;z-index:30;margin-bottom:22px;padding:12px 16px;border:1px solid var(--line);border-radius:26px;background:color-mix(in srgb,var(--bg) 60%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 18px 55px rgba(0,0,0,.20);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);animation:fo-drop .8s cubic-bezier(.22,1,.36,1) both}
+.brand{letter-spacing:-.035em}
+.brand-mark{background:linear-gradient(140deg,var(--g2),var(--g) 52%,var(--gd));color:var(--on-green);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 28px rgba(53,240,164,.28);animation:fo-glow 4s ease-in-out infinite}
+.btn{border:1px solid var(--line);border-radius:999px;background:var(--glass2);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.14);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .25s,filter .25s}
+.btn:hover{transform:translateY(-2px);border-color:var(--g);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 10px 28px rgba(53,240,164,.16)}
+.btn.primary{color:var(--on-green);background:linear-gradient(135deg,var(--g2),var(--g) 55%,var(--gd));border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 10px 30px rgba(53,240,164,.24)}
+.profile-card{position:relative;background:var(--glass);border:1px solid var(--line);border-radius:30px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),var(--shadow);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);animation:fo-rise .85s .08s cubic-bezier(.22,1,.36,1) both}
+.cover{background:radial-gradient(circle at 80% 0%,rgba(53,240,164,.28),transparent 33%),linear-gradient(120deg,#0f8f5a,#0c3b28 52%,#071b12)}
+.cover::before,.cover::after{border-color:rgba(184,255,208,.17);animation:fo-orbit 18s linear infinite}
+.cover::after{animation-duration:24s;animation-direction:reverse}
+.avatar{border-color:var(--bg);background:linear-gradient(135deg,rgba(53,240,164,.22),rgba(255,255,255,.045));box-shadow:0 14px 34px rgba(0,0,0,.32),0 0 0 5px rgba(53,240,164,.09)}
+.verified{background:var(--g);color:var(--on-green);box-shadow:0 0 0 4px rgba(53,240,164,.10)}
+.stats{border-top-color:var(--line)}
+.stat{background:rgba(255,255,255,.045);border-color:var(--line);border-radius:16px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:transform .35s cubic-bezier(.34,1.56,.64,1),border-color .25s,background .25s}
+.stat:hover{background:rgba(53,240,164,.08);border-color:rgba(53,240,164,.32);transform:translateY(-3px)}
+.content-head h2{letter-spacing:-.045em}
+.post-tabs{background:var(--glass);border-color:var(--line);border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.post-tab{border-radius:12px;transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .25s,color .25s,border-color .25s}
+.post-tab:hover{transform:translateY(-1px)}
+.post-tab:hover,.post-tab[aria-pressed="true"]{color:var(--g);background:rgba(53,240,164,.10);border-color:rgba(53,240,164,.23)}
+.post-list{gap:16px}
+.post{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.065),rgba(255,255,255,.025));border:1px solid var(--line);border-radius:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 16px 44px rgba(0,0,0,.16);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:transform .35s cubic-bezier(.34,1.56,.64,1),border-color .25s,box-shadow .25s}
+.post::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;border-radius:inherit;transition:opacity .4s;background:radial-gradient(440px circle at var(--mx,50%) var(--my,0%),rgba(53,240,164,.12),transparent 48%)}
+.post:hover{transform:translateY(-3px);border-color:rgba(53,240,164,.30);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 24px 58px rgba(0,0,0,.22)}
+.post:hover::after{opacity:1}
+.post-body,.post-top,.post-meta{position:relative;z-index:1}
+.media{background:rgba(0,0,0,.22);border-color:var(--line);border-radius:18px}
+.empty{background:var(--glass);border:1px dashed rgba(53,240,164,.28);border-radius:26px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.flash{background:var(--glass);border-color:var(--line);border-radius:16px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.safety-actions{background:rgba(5,18,12,.92);border-color:var(--line);border-radius:18px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.safety-actions select,.safety-actions textarea{background:rgba(0,0,0,.24);border-color:var(--line);border-radius:12px}
+.footer{color:var(--muted)}
+@keyframes fo-drop{from{opacity:0;transform:translateY(-22px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes fo-rise{from{opacity:0;transform:translateY(28px) scale(.985);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes fo-glow{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 12px 38px rgba(53,240,164,.38);transform:translateY(-1px)}}
+@keyframes fo-orbit{to{transform:rotate(360deg)}}
+@media(max-width:600px){.shell{width:calc(100% - 20px);padding-top:8px}.topbar{top:6px;padding:9px 10px;border-radius:20px}.profile-card{border-radius:24px}.cover{height:145px}.profile-main{padding-left:16px;padding-right:16px}.identity-row{flex-wrap:wrap}.profile-actions{justify-content:flex-start}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+</style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='funaab-glass.css', v='2') }}">
 </head>
 <body>
+<div class="fo-ambient" aria-hidden="true"></div>
   <div class="shell">
     <header class="topbar">
       <a class="brand" href="{{ url_for('dashboard') }}" aria-label="FUNAAB ONE campus feed">
@@ -340,6 +393,20 @@
       post.dataset.profileHidden = String(!visible);
     });
   }));
+})();
+</script>
+
+
+<script>
+(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.feature,.preview,.developer-card,.cta-box,.profile-card,.post').forEach(el => {
+    el.addEventListener('pointermove', event => {
+      const rect = el.getBoundingClientRect();
+      el.style.setProperty('--mx', `${event.clientX - rect.left}px`);
+      el.style.setProperty('--my', `${event.clientY - rect.top}px`);
+    }, { passive: true });
+  });
 })();
 </script>
 
