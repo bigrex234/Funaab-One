@@ -1583,10 +1583,44 @@ def logout():
 # DASHBOARD / CAMPUS FEED
 # ==================================================
 
+# Spotify token cache is process-local. Client Credentials is used only for public
+# catalogue search; the client secret never reaches the browser.
+_spotify_token = {"value": "", "expires_at": 0}
+
+
+def _spotify_access_token():
+    import base64
+    import time
+
+    client_id = os.environ.get("SPOTIFY_CLIENT_ID", "").strip()
+    client_secret = os.environ.get("SPOTIFY_CLIENT_SECRET", "").strip()
+    if not client_id or not client_secret:
+        raise RuntimeError("Spotify API credentials are not configured.")
+    if _spotify_token["value"] and time.time() < _spotify_token["expires_at"] - 30:
+        return _spotify_token["value"]
+    credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    req = URLRequest(
+        "https://accounts.spotify.com/api/token",
+        data=b"grant_type=client_credentials",
+        headers={"Authorization": "Basic " + credentials,
+                 "Content-Type": "application/x-www-form-urlencoded",
+                 "Accept": "application/json"},
+        method="POST",
+    )
+    with urlopen(req, timeout=8) as response:
+        payload = json.loads(response.read(256 * 1024).decode("utf-8"))
+    token = payload.get("access_token")
+    if not token:
+        raise RuntimeError("Spotify did not return an access token.")
+    _spotify_token["value"] = token
+    _spotify_token["expires_at"] = time.time() + int(payload.get("expires_in", 3600))
+    return token
+
+
 @app.route("/music", methods=["GET"])
 @login_required
 def music():
-    """Audius-powered music discovery and browser-local personal library."""
+    """Spotify-powered music discovery with Spotify-hosted embeds."""
     return render_template("music.html", student=current_user)
 
 
@@ -1596,49 +1630,42 @@ def music_search():
     query = (request.args.get("q") or "").strip()[:100]
     if len(query) < 2:
         return jsonify(ok=True, tracks=[])
-    params = {"query": query, "limit": 20, "app_name": "FUNAAB_ONE"}
-    api_key = os.environ.get("AUDIUS_API_KEY", "").strip()
-    if api_key:
-        params["api_key"] = api_key
-    endpoint = "https://api.audius.co/v1/tracks/search?" + urlencode(params)
     try:
-        req = URLRequest(endpoint, headers={"Accept": "application/json", "User-Agent": "FUNAAB-ONE/1.0"})
+        token = _spotify_access_token()
+        params = urlencode({"q": query, "type": "track", "limit": 20, "market": "US"})
+        endpoint = "https://api.spotify.com/v1/search?" + params
+        req = URLRequest(endpoint, headers={"Authorization": "Bearer " + token,
+                                            "Accept": "application/json",
+                                            "User-Agent": "FUNAAB-ONE/1.0"})
         with urlopen(req, timeout=8) as response:
             payload = json.loads(response.read(2 * 1024 * 1024).decode("utf-8"))
-        raw_tracks = payload.get("data", []) if isinstance(payload, dict) else []
+        raw_tracks = ((payload.get("tracks") or {}).get("items") or []) if isinstance(payload, dict) else []
         tracks = []
         for track in raw_tracks[:20]:
             if not isinstance(track, dict) or not track.get("id"):
                 continue
-            artwork = track.get("artwork") or {}
-            user = track.get("user") or {}
+            album = track.get("album") or {}
+            images = album.get("images") or []
+            artists = track.get("artists") or []
+            spotify_id = str(track["id"])
             tracks.append({
-                "id": str(track.get("id")),
-                "title": str(track.get("title") or "Untitled track")[:250],
-                "artist": str(user.get("name") or user.get("handle") or "Audius artist")[:150],
-                "artist_handle": str(user.get("handle") or "")[:100],
-                "artwork": artwork.get("480x480") or artwork.get("150x150") or "",
-                "duration": max(0, int(track.get("duration") or 0)),
-                "permalink": str(track.get("permalink") or ""),
-                "stream_url": url_for("music_stream", track_id=str(track.get("id"))),
+                "id": spotify_id,
+                "title": str(track.get("name") or "Untitled track")[:250],
+                "artist": ", ".join(str(a.get("name") or "") for a in artists[:4])[:180] or "Spotify artist",
+                "artwork": (images[0].get("url") if images and isinstance(images[0], dict) else "") or "",
+                "duration": max(0, int(track.get("duration_ms") or 0) // 1000),
+                "permalink": str((track.get("external_urls") or {}).get("spotify") or "https://open.spotify.com/track/" + spotify_id),
+                "embed_url": "https://open.spotify.com/embed/track/" + spotify_id + "?utm_source=funaab_one",
             })
         return jsonify(ok=True, tracks=tracks)
-    except (HTTPError, URLError, TimeoutError, ValueError, OSError) as exc:
-        app.logger.warning("Audius search unavailable: %s", type(exc).__name__)
-        return jsonify(ok=False, tracks=[], error="Music search is temporarily unavailable. Please try again."), 502
-
-
-@app.route("/api/music/stream/<string:track_id>", methods=["GET"])
-@login_required
-def music_stream(track_id):
-    # Track IDs are constrained to a safe path-segment character set.
-    if not track_id or len(track_id) > 100 or not all(c.isalnum() or c in "-_" for c in track_id):
-        abort(400)
-    params = {"app_name": "FUNAAB_ONE"}
-    api_key = os.environ.get("AUDIUS_API_KEY", "").strip()
-    if api_key:
-        params["api_key"] = api_key
-    return redirect("https://api.audius.co/v1/tracks/" + track_id + "/stream?" + urlencode(params), code=302)
+    except HTTPError as exc:
+        # Avoid returning provider response bodies, credentials, or token details to clients.
+        app.logger.warning("Spotify search returned HTTP %s", exc.code)
+        message = "Spotify credentials or API access need attention." if exc.code in (401, 403) else "Spotify search is temporarily unavailable. Please try again."
+        return jsonify(ok=False, tracks=[], error=message), 502
+    except (URLError, TimeoutError, ValueError, OSError, RuntimeError) as exc:
+        app.logger.warning("Spotify search unavailable: %s", type(exc).__name__)
+        return jsonify(ok=False, tracks=[], error="Spotify search is not configured yet or is temporarily unavailable."), 502
 
 
 @app.route("/arcade", methods=["GET"])
