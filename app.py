@@ -4163,17 +4163,17 @@ def migrate_optional_profile_columns():
     boolean_default = "FALSE" if db.engine.dialect.name == "postgresql" else "0"
     with db.engine.begin() as connection:
         if "profile_picture" not in existing_columns:
-            connection.execute(text("ALTER TABLE user ADD COLUMN profile_picture VARCHAR(500)"))
+            connection.execute(text("ALTER TABLE \"user\" ADD COLUMN profile_picture VARCHAR(500)"))
         if "cover_photo" not in existing_columns:
-            connection.execute(text("ALTER TABLE user ADD COLUMN cover_photo VARCHAR(500)"))
+            connection.execute(text("ALTER TABLE \"user\" ADD COLUMN cover_photo VARCHAR(500)"))
         if "interests" not in existing_columns:
-            connection.execute(text("ALTER TABLE user ADD COLUMN interests VARCHAR(500) NOT NULL DEFAULT ''"))
+            connection.execute(text("ALTER TABLE \"user\" ADD COLUMN interests VARCHAR(500) NOT NULL DEFAULT ''"))
         if "pinned_post_id" not in existing_columns:
-            connection.execute(text("ALTER TABLE user ADD COLUMN pinned_post_id INTEGER"))
+            connection.execute(text("ALTER TABLE \"user\" ADD COLUMN pinned_post_id INTEGER"))
         if "bio" not in existing_columns:
-            connection.execute(text("ALTER TABLE user ADD COLUMN bio VARCHAR(300) NOT NULL DEFAULT ''"))
+            connection.execute(text("ALTER TABLE \"user\" ADD COLUMN bio VARCHAR(300) NOT NULL DEFAULT ''"))
         if "is_suspended" not in existing_columns:
-            connection.execute(text(f"ALTER TABLE user ADD COLUMN is_suspended BOOLEAN NOT NULL DEFAULT {boolean_default}"))
+            connection.execute(text(f"ALTER TABLE \"user\" ADD COLUMN is_suspended BOOLEAN NOT NULL DEFAULT {boolean_default}"))
 
 
 # Vercel imports this module instead of running it as __main__.
