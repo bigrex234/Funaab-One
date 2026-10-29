@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07110e">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>FUNAAB AI · FUNAAB ONE</title>
+<style>
+:root{--bg:#06100c;--panel:#0d1b15;--panel2:#13271e;--line:#254637;--text:#edf8f1;--muted:#9bb6a6;--green:#35e89a;--green2:#a6ffd1;--danger:#ff9b9b}
+[data-theme="light"]{--bg:#f2f8f4;--panel:#fff;--panel2:#eaf5ee;--line:#cbded2;--text:#14251b;--muted:#5d7465;--green:#078d59;--green2:#176a49;--danger:#b42335}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 20% 0%,rgba(31,155,94,.12),transparent 38%),var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,sans-serif;min-height:100vh}a{color:inherit;text-decoration:none}button,textarea{font:inherit}.shell{max-width:1450px;margin:auto;padding:22px;display:grid;grid-template-columns:265px minmax(0,1fr);gap:20px;min-height:100vh}.side,.main{background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:24px;min-width:0}.side{padding:20px;height:max-content;position:sticky;top:20px}.brand{display:flex;align-items:center;gap:11px;font-weight:850;font-size:18px;margin-bottom:22px}.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--green),#0d9b61);color:#052015;display:grid;place-items:center;font-weight:950}.eyebrow{color:var(--green);font-size:11px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase}.nav{display:grid;gap:7px;margin:20px 0}.nav a{padding:10px 12px;border-radius:12px;color:var(--muted)}.nav a:hover,.nav a.active{background:var(--panel2);color:var(--text)}.side-note{border:1px solid var(--line);border-radius:16px;padding:13px;color:var(--muted);font-size:12px}.main{display:flex;flex-direction:column;overflow:hidden;min-height:calc(100vh - 44px)}.top{padding:22px 25px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.top h1{font-size:23px;margin:3px 0}.status{font-size:12px;color:var(--muted)}.online{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:6px}.chat-area{display:flex;flex:1;min-height:0}.history{width:225px;border-right:1px solid var(--line);padding:14px;flex-shrink:0}.newchat{width:100%;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px;border-radius:12px;font-weight:750;cursor:pointer}.history-label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin:18px 4px 8px}.history-list{display:grid;gap:5px}.history-list a{padding:10px;border-radius:10px;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.history-list a.active,.history-list a:hover{background:var(--panel2);color:var(--text)}.chat{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0}.messages{flex:1;padding:25px;overflow:auto;display:flex;flex-direction:column;gap:18px}.welcome{max-width:720px;margin:auto;width:100%;padding:20px 0}.orb{width:58px;height:58px;border-radius:19px;background:linear-gradient(135deg,var(--green),#0b8c5c);display:grid;place-items:center;color:#042016;font-size:28px;box-shadow:0 10px 35px #16a76524}.welcome h2{font-size:clamp(26px,4vw,38px);line-height:1.12;margin:22px 0 10px;letter-spacing:-1px}.welcome h2 span{color:var(--green)}.welcome p{color:var(--muted);max-width:540px}.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:26px}.suggestion{border:1px solid var(--line);border-radius:15px;background:var(--panel);padding:13px;text-align:left;color:var(--text);cursor:pointer}.suggestion:hover{border-color:var(--green)}.suggestion strong{display:block;font-size:13px;margin-bottom:4px}.suggestion small{color:var(--muted);font-size:12px}.bubble{max-width:850px;width:fit-content;white-space:pre-wrap;overflow-wrap:anywhere;padding:14px 16px;border-radius:17px;line-height:1.65}.bubble.user{align-self:flex-end;background:linear-gradient(135deg,#168e5b,#0d6e48);color:white;border-bottom-right-radius:5px}.bubble.assistant{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:5px}.bubble .who{font-size:11px;font-weight:850;letter-spacing:.7px;text-transform:uppercase;color:var(--green);margin-bottom:5px}.bubble.error{border-color:#a94343;color:var(--danger)}.composer-wrap{padding:15px 20px 20px;border-top:1px solid var(--line)}.composer{max-width:900px;margin:auto;border:1px solid var(--line);background:var(--panel2);border-radius:19px;padding:10px;display:flex;gap:10px;align-items:flex-end}.composer textarea{flex:1;min-width:0;resize:none;max-height:160px;min-height:44px;background:transparent;border:0;outline:0;color:var(--text);padding:10px 8px}.send{border:0;background:var(--green);color:#032116;font-weight:850;border-radius:13px;padding:12px 17px;cursor:pointer}.send:disabled{opacity:.5;cursor:wait}.fineprint{text-align:center;font-size:11px;color:var(--muted);margin:9px 0 0}.empty{color:var(--muted);font-size:12px;padding:6px}.mobile-top{display:none}.delete{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:11px}.error-banner{margin:16px 25px 0;padding:12px;border:1px solid #8e4747;border-radius:12px;color:var(--danger);background:#5b1e1e24}
+@media(max-width:850px){.shell{display:block;padding:8px}.side{display:none}.main{min-height:calc(100dvh - 16px);border-radius:18px}.top{padding:16px}.chat-area{flex-direction:column}.history{width:100%;border-right:0;border-bottom:1px solid var(--line);padding:8px 12px}.newchat{width:auto}.history-label{display:none}.history-list{display:flex;overflow:auto;margin-top:8px}.history-list a{max-width:160px}.messages{padding:18px 13px}.composer-wrap{padding:10px}.suggestions{grid-template-columns:1fr}.welcome{padding:12px 0}.bubble{max-width:94%}.top h1{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+  <a class="brand" href="{{ url_for('dashboard') }}"><span class="logo">F</span><span>FUNAAB <span style="color:var(--green)">ONE</span></span></a>
+  <div class="eyebrow">Your campus companion</div>
+  <nav class="nav">
+    <a href="{{ url_for('dashboard') }}">⌂ &nbsp; Campus Feed</a>
+    <a href="{{ url_for('academics') }}">▤ &nbsp; Academic Materials</a>
+    <a href="{{ url_for('communities') }}">◎ &nbsp; Communities</a>
+    <a href="{{ url_for('marketplace') }}">▣ &nbsp; Marketplace</a>
+    <a href="{{ url_for('messages') }}">◌ &nbsp; Messages</a>
+    <a class="active" href="{{ url_for('ai_assistant') }}">✦ &nbsp; FUNAAB AI</a>
+  </nav>
+  <div class="side-note"><strong style="color:var(--text)">A quick note</strong><br>AI can make mistakes. Verify important academic and official campus information with trusted sources.</div>
+  <p style="font-size:12px;color:var(--muted);margin-top:18px">Signed in as <strong style="color:var(--text)">@{{ current_user.username }}</strong></p>
+</aside>
+<section class="main">
+  <header class="top">
+    <div><div class="eyebrow">FUNAAB ONE · AI LAB</div><h1>FUNAAB AI <span style="color:var(--green)">✦</span></h1><div class="status"><span class="online"></span>{% if groq_configured %}Powered by Groq · Ready to help{% else %}Setup needed · Add your Groq API key{% endif %}</div></div>
+    <a href="{{ url_for('dashboard') }}" class="status">← Back to campus</a>
+  </header>
+  {% if not groq_configured %}<div class="error-banner">FUNAAB AI isn't connected yet. Add <code>GROQ_API_KEY</code> to your local <code>.env</code> file and your Vercel project environment variables, then redeploy.</div>{% endif %}
+  <div class="chat-area">
+    <aside class="history">
+      <button class="newchat" id="new-chat">＋ New chat</button>
+      <div class="history-label">Recent conversations</div>
+      <div class="history-list" id="history-list">
+      {% for item in sessions %}
+        <a href="{{ url_for('ai_assistant', chat=item.id) }}" class="{% if active_session and active_session.id == item.id %}active{% endif %}" title="{{ item.title }}">{{ item.title }}</a>
+      {% else %}<div class="empty">Your chats will appear here.</div>{% endfor %}
+      </div>
+    </aside>
+    <div class="chat">
+      <div class="messages" id="messages" aria-live="polite">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="bubble {{ message.role }}"><div class="who">{{ 'You' if message.role == 'user' else 'FUNAAB AI' }}</div><div>{{ message.content }}</div></div>
+          {% endfor %}
+        {% else %}
+          <div class="welcome" id="welcome">
+            <div class="orb">✦</div>
+            <h2>Hey {{ current_user.full_name.split(' ')[0] }}.<br><span>What can I help you with?</span></h2>
+            <p>Your AI study buddy for explanations, coding, brainstorming, writing, and everyday questions. Ask away.</p>
+            <div class="suggestions">
+              <button class="suggestion" data-prompt="Explain a difficult topic to me in simple terms."><strong>📚 Explain a topic</strong><small>Break down something I'm learning</small></button>
+              <button class="suggestion" data-prompt="Help me create a study plan for this week."><strong>🗓️ Make a study plan</strong><small>Organize revision and study time</small></button>
+              <button class="suggestion" data-prompt="Teach me Python programming step by step with a small example."><strong>💻 Learn to code</strong><small>Practice programming with examples</small></button>
+              <button class="suggestion" data-prompt="Give me five practice questions on a topic I choose, and hide the answers until I try."><strong>🧠 Practice questions</strong><small>Test what I know</small></button>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+      <div class="composer-wrap">
+        <form class="composer" id="chat-form">
+          <textarea id="message-input" rows="1" maxlength="4000" placeholder="Message FUNAAB AI…" aria-label="Message FUNAAB AI"></textarea>
+          <button class="send" id="send-button" type="submit">Send ↗</button>
+        </form>
+        <div class="fineprint">AI can be wrong sometimes. Don't share passwords or sensitive personal information.</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<script>
+(() => {
+  const messages = document.getElementById("messages");
+  const input = document.getElementById("message-input");
+  const form = document.getElementById("chat-form");
+  const send = document.getElementById("send-button");
+  const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  let sessionId = {{ active_session.id if active_session else 'null' }};
+  let busy = false;
+
+  function scrollBottom(){ messages.scrollTop = messages.scrollHeight; }
+  function addBubble(role, text, error=false){
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.remove();
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + role + (error ? " error" : "");
+    const who = document.createElement("div");
+    who.className = "who";
+    who.textContent = role === "user" ? "You" : "FUNAAB AI";
+    const body = document.createElement("div");
+    body.textContent = text;
+    bubble.append(who, body);
+    messages.appendChild(bubble);
+    scrollBottom();
+    return bubble;
+  }
+  function showWelcome(){
+    messages.innerHTML = `<div class="welcome" id="welcome"><div class="orb">✦</div><h2>Ready when you are.<br><span>What's on your mind?</span></h2><p>Ask a question, learn something new, or work through an idea.</p><div class="suggestions"><button class="suggestion" data-prompt="Explain a difficult topic to me in simple terms."><strong>📚 Explain a topic</strong><small>Break down something I'm learning</small></button><button class="suggestion" data-prompt="Teach me Python programming step by step with a small example."><strong>💻 Learn to code</strong><small>Practice programming with examples</small></button></div></div>`;
+  }
+  async function sendMessage(text){
+    text = (text || "").trim();
+    if (!text || busy) return;
+    busy = true; send.disabled = true;
+    addBubble("user", text);
+    input.value = ""; input.style.height = "auto";
+    const pending = addBubble("assistant", "Thinking…");
+    try {
+      const response = await fetch("{{ url_for('ai_chat') }}", {
+        method: "POST",
+        headers: {"Content-Type":"application/json","X-CSRFToken":csrf},
+        body: JSON.stringify({message:text, session_id:sessionId})
+      });
+      const data = await response.json();
+      pending.remove();
+      if (!response.ok) {
+        addBubble("assistant", data.error || "Couldn't get a response. Please try again.", true);
+      } else {
+        sessionId = data.session_id;
+        addBubble("assistant", data.answer);
+        if (!document.querySelector('#history-list a[href*="chat=' + sessionId + '"]')) {
+          const link = document.createElement("a");
+          link.href = "{{ url_for('ai_assistant') }}" + "?chat=" + sessionId;
+          link.textContent = data.title || "New conversation";
+          link.className = "active";
+          document.querySelectorAll("#history-list a").forEach(a => a.classList.remove("active"));
+          document.getElementById("history-list").prepend(link);
+          const empty = document.querySelector("#history-list .empty");
+          if (empty) empty.remove();
+        }
+        history.replaceState(null, "", "{{ url_for('ai_assistant') }}" + "?chat=" + sessionId);
+      }
+    } catch (e) {
+      pending.remove();
+      addBubble("assistant", "Couldn't connect right now. Check your connection and try again.", true);
+    } finally {
+      busy = false; send.disabled = false; input.focus();
+    }
+  }
+  form.addEventListener("submit", e => { e.preventDefault(); sendMessage(input.value); });
+  input.addEventListener("input", () => { input.style.height="auto"; input.style.height=Math.min(input.scrollHeight,160)+"px"; });
+  input.addEventListener("keydown", e => { if(e.key==="Enter" && !e.shiftKey){e.preventDefault();form.requestSubmit();} });
+  document.addEventListener("click", e => {
+    const prompt = e.target.closest("[data-prompt]");
+    if(prompt){ input.value=prompt.dataset.prompt; sendMessage(input.value); }
+  });
+  document.getElementById("new-chat").addEventListener("click", () => {
+    sessionId = null; history.replaceState(null, "", "{{ url_for('ai_assistant') }}");
+    document.querySelectorAll("#history-list a").forEach(a=>a.classList.remove("active"));
+    showWelcome(); input.focus();
+  });
+  scrollBottom();
+})();
+</script>
+</body>
+</html>
