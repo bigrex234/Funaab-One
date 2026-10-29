@@ -207,6 +207,12 @@ MAX_PASSWORD_LENGTH = 128
 MAX_POST_LENGTH = 280
 MAX_COMMENT_LENGTH = 500
 
+# FUNAAB AI / Groq. Configure GROQ_API_KEY in .env locally and Vercel settings.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
+AI_MAX_MESSAGE_CHARS = 4000
+AI_HISTORY_MESSAGES = 12
+
 ADMIN_USERNAMES = {
     "rex4u_"
 }
@@ -267,6 +273,26 @@ class User(UserMixin, db.Model):
     @property
     def is_admin(self):
         return self.username.lower() in ADMIN_USERNAMES
+
+
+
+class AIChatSession(db.Model):
+    """A private FUNAAB AI conversation owned by one signed-in user."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = db.Column(db.String(120), nullable=False, default="New conversation")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
+
+
+class AIChatMessage(db.Model):
+    """One message in a private FUNAAB AI conversation."""
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey("ai_chat_session.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = db.Column(db.String(20), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
 
 
 class Post(db.Model):
@@ -4169,6 +4195,172 @@ def admin_remove_community_comment(comment_id):
 # ==================================================
 # ABOUT FUNAAB ONE
 # ==================================================
+
+
+
+# ==================================================
+# FUNAAB AI — Groq-powered student assistant
+# ==================================================
+
+@app.route("/ai")
+@login_required
+def ai_assistant():
+    sessions = AIChatSession.query.filter_by(user_id=current_user.id).order_by(
+        AIChatSession.updated_at.desc(), AIChatSession.id.desc()
+    ).limit(30).all()
+    active_id = request.args.get("chat", type=int)
+    active_session = None
+    messages = []
+    if active_id:
+        active_session = AIChatSession.query.filter_by(
+            id=active_id, user_id=current_user.id
+        ).first()
+        if active_session:
+            messages = AIChatMessage.query.filter_by(
+                session_id=active_session.id, user_id=current_user.id
+            ).order_by(AIChatMessage.created_at.asc()).all()
+    return render_template(
+        "ai_assistant.html",
+        sessions=sessions,
+        active_session=active_session,
+        messages=messages,
+        groq_configured=bool(GROQ_API_KEY),
+    )
+
+
+@app.route("/api/ai/chat", methods=["POST"])
+@login_required
+def ai_chat():
+    payload = request.get_json(silent=True) or {}
+    message = str(payload.get("message", "")).strip()
+    session_id = payload.get("session_id")
+
+    if not message:
+        return jsonify({"error": "Type a message first."}), 400
+    if len(message) > AI_MAX_MESSAGE_CHARS:
+        return jsonify({"error": f"Messages must be {AI_MAX_MESSAGE_CHARS} characters or fewer."}), 400
+    if not GROQ_API_KEY:
+        app.logger.error("FUNAAB AI request blocked: GROQ_API_KEY is not configured.")
+        return jsonify({"error": "FUNAAB AI is not configured yet. Add GROQ_API_KEY to your local .env and Vercel environment variables."}), 503
+
+    chat_session = None
+    if session_id:
+        try:
+            session_id = int(session_id)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid conversation."}), 400
+        chat_session = AIChatSession.query.filter_by(
+            id=session_id, user_id=current_user.id
+        ).first()
+        if not chat_session:
+            return jsonify({"error": "Conversation not found."}), 404
+    else:
+        title = message[:72].strip() or "New conversation"
+        chat_session = AIChatSession(user_id=current_user.id, title=title)
+        db.session.add(chat_session)
+        db.session.flush()
+
+    # Build a short context window from this user's own conversation only.
+    recent = AIChatMessage.query.filter_by(
+        session_id=chat_session.id, user_id=current_user.id
+    ).order_by(AIChatMessage.created_at.desc(), AIChatMessage.id.desc()).limit(AI_HISTORY_MESSAGES).all()
+    recent.reverse()
+
+    system_prompt = (
+        "You are FUNAAB AI, a friendly and careful assistant inside FUNAAB ONE, "
+        "a student community platform for the Federal University of Agriculture, Abeokuta, Nigeria. "
+        "Be helpful, clear, encouraging, and concise unless the student asks for detail. "
+        "Help with studying, explanations, writing, programming, brainstorming, and general questions. "
+        "Do not invent official FUNAAB policies, dates, fees, campus locations, or event details. "
+        "If you do not have verified campus information, say so and suggest checking an official source. "
+        "Do not claim to access the user's account, private messages, live campus data, or website records unless provided in this chat. "
+        "Respect privacy and do not help with harmful or illegal activities."
+    )
+    api_messages = [{"role": "system", "content": system_prompt}]
+    for old in recent:
+        if old.role in {"user", "assistant"}:
+            api_messages.append({"role": old.role, "content": old.content})
+    api_messages.append({"role": "user", "content": message})
+
+    request_body = json.dumps({
+        "model": GROQ_MODEL,
+        "messages": api_messages,
+        "temperature": 0.6,
+        "max_tokens": 900,
+    }).encode("utf-8")
+    groq_request = URLRequest(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=request_body,
+        headers={
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urlopen(groq_request, timeout=35) as response:
+            result = json.loads(response.read().decode("utf-8"))
+        answer = str(result["choices"][0]["message"]["content"]).strip()
+        if not answer:
+            raise ValueError("The model returned an empty response.")
+    except HTTPError as exc:
+        detail = ""
+        try:
+            detail = exc.read().decode("utf-8", errors="replace")[:500]
+        except Exception:
+            pass
+        app.logger.warning("Groq API returned HTTP %s: %s", exc.code, detail)
+        if exc.code == 429:
+            return jsonify({"error": "The AI is busy or the free-tier limit was reached. Please wait a little and try again."}), 429
+        if exc.code in (401, 403):
+            return jsonify({"error": "Groq rejected the API key. Check GROQ_API_KEY in your environment settings."}), 502
+        return jsonify({"error": "The AI provider could not complete that request. Please try again shortly."}), 502
+    except (URLError, TimeoutError):
+        return jsonify({"error": "FUNAAB AI could not reach Groq. Check your connection and try again."}), 502
+    except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError):
+        app.logger.exception("Could not parse Groq response.")
+        return jsonify({"error": "The AI returned an unexpected response. Please try again."}), 502
+    except Exception:
+        app.logger.exception("Unexpected FUNAAB AI error.")
+        return jsonify({"error": "Something went wrong while generating the answer."}), 500
+
+    now = utcnow()
+    db.session.add(AIChatMessage(
+        session_id=chat_session.id, user_id=current_user.id,
+        role="user", content=message, created_at=now,
+    ))
+    db.session.add(AIChatMessage(
+        session_id=chat_session.id, user_id=current_user.id,
+        role="assistant", content=answer, created_at=now,
+    ))
+    chat_session.updated_at = now
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        app.logger.exception("Could not save FUNAAB AI conversation.")
+        return jsonify({"error": "The answer was generated, but the conversation could not be saved. Please retry."}), 500
+
+    return jsonify({
+        "answer": answer,
+        "session_id": chat_session.id,
+        "title": chat_session.title,
+    })
+
+
+@app.route("/api/ai/chat/<int:session_id>/delete", methods=["POST"])
+@login_required
+def ai_delete_chat(session_id):
+    chat_session = AIChatSession.query.filter_by(
+        id=session_id, user_id=current_user.id
+    ).first_or_404()
+    AIChatMessage.query.filter_by(session_id=chat_session.id, user_id=current_user.id).delete()
+    db.session.delete(chat_session)
+    db.session.commit()
+    return jsonify({"ok": True})
+
 
 @app.route("/about")
 def about():
