@@ -21,6 +21,7 @@ from flask_login import (
 )
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+from groq import Groq
 import cloudinary
 import cloudinary.uploader
 import cloudinary.utils
@@ -4282,49 +4283,31 @@ def ai_chat():
             api_messages.append({"role": old.role, "content": old.content})
     api_messages.append({"role": "user", "content": message})
 
-    request_body = json.dumps({
-        "model": GROQ_MODEL,
-        "messages": api_messages,
-        "temperature": 0.6,
-        "max_tokens": 900,
-    }).encode("utf-8")
-    groq_request = URLRequest(
-        "https://api.groq.com/openai/v1/chat/completions",
-        data=request_body,
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-        method="POST",
-    )
-
     try:
-        with urlopen(groq_request, timeout=35) as response:
-            result = json.loads(response.read().decode("utf-8"))
-        answer = str(result["choices"][0]["message"]["content"]).strip()
+        client = Groq(api_key=GROQ_API_KEY, timeout=35.0, max_retries=1)
+        result = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=api_messages,
+            temperature=0.6,
+            max_tokens=900,
+        )
+        answer = (result.choices[0].message.content or "").strip()
         if not answer:
             raise ValueError("The model returned an empty response.")
-    except HTTPError as exc:
-        detail = ""
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")[:500]
-        except Exception:
-            pass
-        app.logger.warning("Groq API returned HTTP %s: %s", exc.code, detail)
-        if exc.code == 429:
+    except Exception as exc:
+        # Log provider details for debugging without returning secrets to the browser.
+        app.logger.exception(
+            "FUNAAB AI Groq request failed (%s).",
+            type(exc).__name__,
+        )
+        status_code = getattr(exc, "status_code", None)
+        if status_code == 429:
             return jsonify({"error": "The AI is busy or the free-tier limit was reached. Please wait a little and try again."}), 429
-        if exc.code in (401, 403):
-            return jsonify({"error": "Groq rejected the API key. Check GROQ_API_KEY in your environment settings."}), 502
-        return jsonify({"error": "The AI provider could not complete that request. Please try again shortly."}), 502
-    except (URLError, TimeoutError):
-        return jsonify({"error": "FUNAAB AI could not reach Groq. Check your connection and try again."}), 502
-    except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError):
-        app.logger.exception("Could not parse Groq response.")
-        return jsonify({"error": "The AI returned an unexpected response. Please try again."}), 502
-    except Exception:
-        app.logger.exception("Unexpected FUNAAB AI error.")
-        return jsonify({"error": "Something went wrong while generating the answer."}), 500
+        if status_code == 401:
+            return jsonify({"error": "Groq authentication failed. Verify GROQ_API_KEY in Vercel environment settings."}), 502
+        if status_code == 403:
+            return jsonify({"error": "Groq denied the request. Check Vercel logs for the provider error details."}), 502
+        return jsonify({"error": "FUNAAB AI could not get a response from its AI provider. Please try again shortly."}), 502
 
     now = utcnow()
     db.session.add(AIChatMessage(
