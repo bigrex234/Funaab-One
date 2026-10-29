@@ -34,3 +34,21 @@ FUNAAB ONE's `/music` page uses Spotify's Web API for public track search and Sp
 - `SPOTIFY_CLIENT_SECRET`: the app Client Secret from Spotify for Developers (Secret type; server-side only)
 
 Redeploy after setting or changing environment variables. Do not expose the Client Secret in templates, browser JavaScript, screenshots, or GitHub. This initial integration uses Spotify Client Credentials for catalogue search; it does not log each student into Spotify or grant personalized playback. Spotify controls playback availability, account requirements, app access, and policy restrictions. Spotify Development Mode currently has user and access limitations, so verify the current rules before rolling this out to the whole campus. Favourites are stored in local storage on each browser/device. No database migration is required.
+
+
+## FUNAAB AI (Groq) setup
+
+FUNAAB AI uses the Groq OpenAI-compatible chat-completions API. The API key is read only on the server from `GROQ_API_KEY`; never place it in browser JavaScript or commit it to GitHub.
+
+### Local development
+1. Copy `.env.example` to `.env`.
+2. Set `SECRET_KEY` to a long random value.
+3. Set `GROQ_API_KEY` to the key created in your Groq console.
+4. Optionally set `GROQ_MODEL` to a model currently available to your Groq account.
+5. Install dependencies and run the app as usual.
+6. Sign in and open `/ai`.
+
+### Vercel
+In Project Settings → Environment Variables, add `GROQ_API_KEY` and `GROQ_MODEL` (optional, default: `llama-3.3-70b-versatile`). Ensure `SECRET_KEY` and `DATABASE_URL` are already configured, then redeploy. New `ai_chat_session` and `ai_chat_message` tables are created by the app's existing `db.create_all()` startup path; for production, a versioned migration is preferable as the application grows.
+
+Groq free-tier quotas and model availability can change. If the selected model becomes unavailable, set `GROQ_MODEL` to a supported model from your Groq console. Never share your API key in screenshots or chat messages.
